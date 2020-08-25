@@ -1,0 +1,50 @@
+.big-button{
+    width: 200px!important;
+    min-width: unset!important;
+    height: 50px!important;
+    text-align: center;
+    font-size: 125%;
+}
+
+.big-button-center {
+    padding: 20px 0;
+    width: 200px!important;
+    min-width: unset!important;
+    text-align: center;
+    font-size: 125%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .alertmessage {
+    background-color: #AB47BC;
+    color: #ffffff;
+    width: auto;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 4px;
+  }
+
+  .weathermessage {
+    background-color: #FFFF00;
+    color: #b71c1c;
+    font-size: 125%;
+    font-weight: bolder;
+    padding: 10px 10px 10px 10px;
+    width: auto;
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 4px;
+  }
+
+  .mat-list-item {
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .textcenter {
+    text-align: center;
+}
