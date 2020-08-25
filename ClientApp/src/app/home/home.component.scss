@@ -7,7 +7,7 @@
 }
 
 .big-button-center {
-    padding: 20px 0;
+    padding: 15px 0;
     width: 200px!important;
     min-width: unset!important;
     text-align: center;
@@ -42,6 +42,11 @@
 
   .mat-list-item {
     color: #ffffff;
+    text-align: center;
+  }
+
+  .mat-list-item .weathermessage {
+    color: #b71c1c;
     text-align: center;
   }
 
