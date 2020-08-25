@@ -10,6 +10,10 @@ $cr-theme: mat-light-theme($cr-primary, $cr-accent, $cr-warn);
 
 @include angular-material-theme($cr-theme);
 
+p {
+  font-size: 115%;
+}
+
 .center {
     display: block;
     margin-left: auto;
