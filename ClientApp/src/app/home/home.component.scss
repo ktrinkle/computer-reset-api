@@ -31,8 +31,9 @@
     background-color: #FFFF00;
     color: #b71c1c;
     font-size: 125%;
+    line-height: 125%;
     font-weight: bolder;
-    padding: 10px 10px 10px 10px;
+    padding: 10px 0;
     width: auto;
     text-align: left;
     margin-left: auto;
@@ -40,15 +41,15 @@
     border-radius: 4px;
   }
 
-  .mat-list-item {
+  .mat-list-item alertmessage {
     color: #ffffff;
     text-align: center;
   }
 
-  .mat-list-item .weathermessage {
-    color: #b71c1c;
-    text-align: center;
+  .mat-icon {
+    padding: 0 5px 0 0;
   }
+
 
   .textcenter {
     text-align: center;
