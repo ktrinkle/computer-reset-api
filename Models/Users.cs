@@ -24,4 +24,13 @@ namespace ComputerResetApi
         public string lastName { get; set; }
         public string facebookId { get; set; }
     }
+
+    public partial class UserAttrib
+    {
+        public string CityNm { get; set; }
+        public string StateCd { get; set; }
+        public string RealNm { get; set; }
+        public bool? AdminFlag { get; set; }
+        public bool? VolunteerFlag { get; set; }
+     }
 }

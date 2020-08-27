@@ -26,12 +26,12 @@ namespace ComputerResetApi.Controllers
             return Ok(response);
         }
 
-        [Authorize]
+        /*[Authorize]
         [HttpGet]
         public IActionResult GetAll()
         {
             var users = _userService.GetAll();
             return Ok(users);
-        }
+        }*/
     }
 }

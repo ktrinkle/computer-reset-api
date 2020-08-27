@@ -279,17 +279,25 @@ namespace ComputerResetApi.Controllers
         }
 
         //[Authorize]    
-        [HttpGet("api/users/volunteer/{fbId}")]
-        public async Task<ContentResult> GetVolStatus(string fbId)
+        [HttpGet("api/users/attrib/{fbId}")]
+        public async Task<ActionResult<UserAttrib>> GetUserAttrib(string fbId)
         {
-            //gets volunteer flag of user
+            //gets status flag of user
 
             //do we have user with this id - ours?
-            Users existUser = await (from u in _context.Users 
-            where u.FbId == fbId && u.VolunteerFlag == true
-            select u).SingleOrDefaultAsync();
+            var existUserReturn = await(from u in _context.Users 
+            where u.FbId == fbId
+            select new {u.CityNm, u.StateCd, u.RealNm, u.AdminFlag, u.VolunteerFlag}).FirstOrDefaultAsync();
 
-            return Content((existUser.AdminFlag ?? false).ToString());
+            UserAttrib existUser = new UserAttrib(){
+                CityNm = existUserReturn.CityNm,
+                StateCd = existUserReturn.StateCd,
+                RealNm = existUserReturn.RealNm,
+                AdminFlag = existUserReturn.AdminFlag,
+                VolunteerFlag = existUserReturn.VolunteerFlag
+            };
+
+            return existUser;
         }
         
         //[Authorize]
