@@ -14,4 +14,10 @@ namespace ComputerResetApi
 
         public virtual UsStates IdStateNavigation { get; set; }
     }
+
+    public partial class UsCitiesMini
+    {
+        public string City { get; set; }
+        public string StateCd { get; set; }
+    }
 }
