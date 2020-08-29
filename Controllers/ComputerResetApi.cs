@@ -131,6 +131,11 @@ namespace ComputerResetApi.Controllers
                 ourUserId = existUserTest.Id;
             }
 
+            //Kisha rule
+            if (signup.realname.ToLower() == "keyboard kid") {
+                return Content("Your name is not allowed to sign up for an event.");
+            }
+
             //now re-run query to verify user can sign up
             var existUser = _context.Users.Where( a => a.Id == ourUserId && a.BanFlag == false).FirstOrDefault();
 
@@ -375,11 +380,19 @@ namespace ComputerResetApi.Controllers
             return await _context.UsStates.OrderBy(a => a.StateName).ToListAsync();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("api/ref/city/{id}")]
         public async Task<ActionResult<IEnumerable<UsCities>>> GetCity(int id)
         {
             return await _context.UsCities.Where(a => a.IdState == id 
+            ).OrderBy(a => a.City).ToListAsync();
+        }
+
+        [Authorize]
+        [HttpGet("api/ref/citylist/{id}")]
+        public async Task<ActionResult<IEnumerable<UsCitiesMini>>> GetCityByState(string id)
+        {
+            return await _context.UsCitiesMini.Where(a => a.StateCd == id 
             ).OrderBy(a => a.City).ToListAsync();
         }
 
