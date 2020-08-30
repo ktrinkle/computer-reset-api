@@ -38,7 +38,7 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/show/upcoming/{fbId}")]
+        [HttpGet("api/events/show/upcoming/{facebookId}")]
         public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession(string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
@@ -50,7 +50,7 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/show/past/{fbId}")]
+        [HttpGet("api/events/show/past/{facebookId}")]
         public async Task<ActionResult<IEnumerable<Timeslot>>> ShowPastSession(string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
@@ -60,7 +60,19 @@ namespace ComputerResetApi.Controllers
                 ).OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }
-        
+
+        [Authorize]
+        [HttpGet("api/events/show/dayof/{facebookId}")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowDayOfEvent(string facebookId)
+        {
+            if (!CheckAdmin(facebookId)) {
+                return null;
+            } else {
+                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
+                && a.EventStartTms <= DateTime.Today.AddDays(1) 
+                ).OrderBy(a => a.EventStartTms).ToListAsync();
+            }
+        }        
         // POST: api/events/create
         // Creates a new session
         [Authorize]
@@ -443,15 +455,6 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [Obsolete("Use /api/ref/citylist instead")]
-        [HttpGet("api/ref/city/{id}")]
-        public async Task<ActionResult<IEnumerable<UsCities>>> GetCity(int id)
-        {
-            return await _context.UsCities.Where(a => a.IdState == id 
-            ).OrderBy(a => a.City).ToListAsync();
-        }
-
-        [Authorize]
         [HttpGet("api/ref/citylist/{id}")]
         public async Task<ActionResult<IEnumerable<UsCities>>> CityList(string id)
         {
@@ -461,9 +464,9 @@ namespace ComputerResetApi.Controllers
 
         private bool CheckAdmin(string fbId) {
             var adminCheck = _context.Users.Where(a=> a.FbId == fbId)
-            .Select(a => new{adminFlag = a.AdminFlag}).SingleOrDefault();
+            .Select(a => a.AdminFlag).SingleOrDefault();
 
-            return adminCheck.adminFlag ?? false;
+            return adminCheck ?? false;
         }
 
     }
