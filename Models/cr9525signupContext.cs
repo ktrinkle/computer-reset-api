@@ -18,7 +18,6 @@ namespace ComputerResetApi.Models
         public virtual DbSet<EventSignup> EventSignup { get; set; }
         public virtual DbSet<Timeslot> Timeslot { get; set; }
         public virtual DbSet<UsCities> UsCities { get; set; }
-        public virtual DbSet<UsCitiesMini> UsCitiesMini { get; set; }
         public virtual DbSet<UsStates> UsStates { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
@@ -90,6 +89,11 @@ namespace ComputerResetApi.Models
                     .HasColumnName("overbook_cnt")
                     .HasDefaultValueSql("5")
                     .HasComment("Overbook factor for the standby list.");
+
+                entity.Property(e => e.SignupCnt)
+                    .HasColumnName("signup_cnt")
+                    .HasDefaultValueSql("30")
+                    .HasComment("Signup limitations.");
             });
 
             modelBuilder.Entity<UsCities>(entity =>
@@ -103,37 +107,17 @@ namespace ComputerResetApi.Models
                     .HasColumnName("city")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.County)
-                    .IsRequired()
-                    .HasColumnName("county")
-                    .HasMaxLength(50);
-
                 entity.Property(e => e.IdState).HasColumnName("id_state");
 
-                entity.Property(e => e.Latitude).HasColumnName("latitude");
-
-                entity.Property(e => e.Longitude).HasColumnName("longitude");
+                entity.Property(e => e.StateCd)
+                    .HasColumnName("state_cd")
+                    .HasMaxLength(3);
 
                 entity.HasOne(d => d.IdStateNavigation)
                     .WithMany(p => p.UsCities)
                     .HasForeignKey(d => d.IdState)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("us_cities_id_state_fkey");
-            });
-
-            modelBuilder.Entity<UsCitiesMini>(entity =>
-            {
-                entity.ToTable("us_cities");
-
-                entity.Property(e => e.City)
-                    .IsRequired()
-                    .HasColumnName("city")
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.StateCd)
-                    .IsRequired()
-                    .HasColumnName("state_cd")
-                    .HasMaxLength(3);
             });
 
             modelBuilder.Entity<UsStates>(entity =>
