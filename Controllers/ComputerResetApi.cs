@@ -29,10 +29,14 @@ namespace ComputerResetApi.Controllers
         [HttpGet("api/events/show/open")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot()
         {
-            return await _context.Timeslot.Where(a => a.EventOpenTms <= DateTime.Now 
-            && a.EventClosed == false)
-            .OrderBy(a => a.EventStartTms)
-            .Select(a => new TimeslotLimited {Id = a.Id, 
+            return await _context.Timeslot.FromSqlRaw(
+                "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
+                "inner join (select timeslot_id, count(*) signup_cnt "+
+                "from event_signup group by timeslot_id) sct " +
+                "on ts.id = sct.timeslot_id and sct.signup_cnt < ts.signup_cnt " +
+                "where not ts.event_closed " +
+                "order by ts.event_start_tms"
+            ).Select(a => new TimeslotLimited {Id = a.Id, 
             EventStartTms = a.EventStartTms, 
             EventEndTms = a.EventEndTms}).ToListAsync();
         }
@@ -164,11 +168,13 @@ namespace ComputerResetApi.Controllers
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
-            //now re-run query to verify user can sign up
-            var existUser = _context.Users.Where( a => a.Id == ourUserId && a.BanFlag == false).FirstOrDefault();
+            //run query to verify user can sign up - check the ban flag
+            var existUser = _context.Users.Where( a => a.FbId == signup.fbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
                 return Content("I am sorry, you are not allowed to sign up for this event.");
+            } else {
+                ourUserId = existUser.Id;
             }
 
             var existUserEvent = _context.EventSignup.Where(a => a.UserId == ourUserId && a.TimeslotId == signup.eventId).FirstOrDefault();
@@ -176,10 +182,19 @@ namespace ComputerResetApi.Controllers
                 return Content("It looks like you have already signed up for this event.");
             }
 
-            //check for event count - new per Raymond
+            //check for event count - new per Raymond. Will run as final verification.
 
+            int currCount = _context.EventSignup.Count(m => m.TimeslotId == signup.eventId);
+            var eventStats = _context.Timeslot.Where(a => a.Id == signup.eventId)
+                .FirstOrDefault();
+            if (currCount >= eventStats.SignupCnt) {
+                //auto-close functionality
+                eventStats.EventClosed = true;
+                await _context.SaveChangesAsync();
+                return Content("I'm sorry, but this event is full. Please select another event.");
+            }
 
-
+            //we passed all the checks, now lets do this thing.
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.eventId,
                 UserId = ourUserId,
