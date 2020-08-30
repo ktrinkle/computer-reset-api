@@ -30,36 +30,52 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/show
         [Authorize]
         [HttpGet("api/events/show/open")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> GetOpenTimeslot()
+        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot()
         {
             return await _context.Timeslot.Where(a => a.EventOpenTms <= DateTime.Now 
-            && a.EventClosed == false).OrderBy(a => a.EventStartTms).ToListAsync();
+            && a.EventClosed == false)
+            .OrderBy(a => a.EventStartTms)
+            .Select(a => new TimeslotLimited {Id = a.Id, 
+            EventStartTms = a.EventStartTms, 
+            EventEndTms = a.EventEndTms}).ToListAsync();
         }
 
         [Authorize]
-        [HttpGet("api/events/show/upcoming")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession()
+        [HttpGet("api/events/show/upcoming/{fbId}")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession(string facebookId)
         {
-            return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Now 
-            ).OrderBy(a => a.EventStartTms).ToListAsync();
+            if (!CheckAdmin(facebookId)) {
+                return null;
+            } else {
+                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Now 
+                ).OrderBy(a => a.EventStartTms).ToListAsync();
+            }
         }
 
         [Authorize]
-        [HttpGet("api/events/show/past")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowPastSession()
+        [HttpGet("api/events/show/past/{fbId}")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowPastSession(string facebookId)
         {
-            return await _context.Timeslot.Where(a => a.EventStartTms < DateTime.Now 
-            ).OrderBy(a => a.EventStartTms).ToListAsync();
+            if (!CheckAdmin(facebookId)) {
+                return null;
+            } else {
+                return await _context.Timeslot.Where(a => a.EventStartTms < DateTime.Now 
+                ).OrderBy(a => a.EventStartTms).ToListAsync();
+            }
         }
         
         // POST: api/events/create
         // Creates a new session
         [Authorize]
         [HttpPost("api/events/create")]
-        public async Task<IActionResult> CreateSession(Timeslot eventNew)
+        public async Task<IActionResult> CreateSession(TimeslotAdmin eventNew)
         {
             //defaults to false for event_closed
             //verify datetime and int integrity
+
+            if (!CheckAdmin(eventNew.facebookId)) {
+                return Unauthorized("You are not authorized to access this function.");
+            }
 
             if ((eventNew.EventEndTms <= eventNew.EventStartTms) || (eventNew.EventOpenTms >= eventNew.EventStartTms)) {
                 return Ok("The end date cannot be before the start date.");
@@ -69,12 +85,12 @@ namespace ComputerResetApi.Controllers
                 return Ok("You cannot create an event in the past.");
             }
 
-            if ((eventNew.EventSlotCnt <= 0) || (eventNew.OverbookCnt < 0)) {
-                return Ok("The booked or overbook count cannot be less than zero.");
+            if ((eventNew.EventSlotCnt <= 0) || (eventNew.OverbookCnt < 0) || (eventNew.SignupCnt < 0)) {
+                return Ok("The booked, overbook or signup count cannot be less than zero.");
             }
 
-            if ((eventNew.EventSlotCnt >= 30) || (eventNew.OverbookCnt > 30) || eventNew.EventSlotCnt + eventNew.OverbookCnt > 60) {
-                return Ok("Events are limited to 30 people on the booked list and 30 on the standby list.");
+            if ((eventNew.EventSlotCnt >= eventNew.SignupCnt) || (eventNew.OverbookCnt > eventNew.SignupCnt) || eventNew.EventSlotCnt + eventNew.OverbookCnt > eventNew.SignupCnt) {
+                return Ok("Events are limited to no more than the maximum signup count.");
             }
 
             //do we have an event that already has this start date/time? if so, fail
@@ -91,7 +107,8 @@ namespace ComputerResetApi.Controllers
                 EventOpenTms = eventNew.EventOpenTms,
                 EventClosed = false,
                 EventSlotCnt = eventNew.EventSlotCnt,
-                OverbookCnt = eventNew.OverbookCnt
+                OverbookCnt = eventNew.OverbookCnt,
+                SignupCnt = eventNew.SignupCnt
             };
             await _context.Timeslot.AddAsync(newSession);
             await _context.SaveChangesAsync();
@@ -111,7 +128,7 @@ namespace ComputerResetApi.Controllers
             //check if user has already signed up for this event
             //only if all checks out enter the user into the table
 
-            //test if user exists in table. if not, call create logic.
+            //test if user exists in table. if not, call create logic. This is now duplicated with admin call.
             var existUserTest = await _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefaultAsync();
 
             if (existUserTest == null) {
@@ -131,6 +148,8 @@ namespace ComputerResetApi.Controllers
                 ourUserId = existUserTest.Id;
             }
 
+            //cut up to here
+
             //Kisha rule
             if (signup.realname.ToLower() == "keyboard kid") {
                 return Content("Your name is not allowed to sign up for an event.");
@@ -147,6 +166,10 @@ namespace ComputerResetApi.Controllers
             if (existUserEvent != null) {
                 return Content("It looks like you have already signed up for this event.");
             }
+
+            //check for event count - new per Raymond
+
+
 
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.eventId,
@@ -170,37 +193,45 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/{eventId}/{maxEventsAttended}")]
-        public IActionResult GetSignedUpMembers(int eventId, int maxEventsAttended)
+        [HttpGet("api/events/signedup/{eventId}/{maxEventsAttended}/{facebookId}")]
+        public IActionResult GetSignedUpMembers(int eventId, int maxEventsAttended, string facebookId)
         {
-            var members =  from eventsignup in _context.EventSignup
-            join users in _context.Users
-            on eventsignup.UserId equals users.Id
-            where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
-            && eventsignup.TimeslotId == eventId
-            select new {
-                users.Id,
-                users.FirstNm,
-                users.LastNm,
-                users.RealNm,
-                users.CityNm,
-                users.StateCd,
-                eventsignup.TimeslotId,
-                eventsignup.SignupTms,
-                eventsignup.AttendNbr,
-                users.EventCnt,
-                users.BanFlag
-            };
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } else {
+                var members =  from eventsignup in _context.EventSignup
+                join users in _context.Users
+                on eventsignup.UserId equals users.Id
+                where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
+                && eventsignup.TimeslotId == eventId
+                select new {
+                    users.Id,
+                    users.FirstNm,
+                    users.LastNm,
+                    users.RealNm,
+                    users.CityNm,
+                    users.StateCd,
+                    eventsignup.TimeslotId,
+                    eventsignup.SignupTms,
+                    eventsignup.AttendNbr,
+                    users.EventCnt,
+                    users.BanFlag
+                };
 
-            return Ok(members);
+                return Ok(members);
+            }
 
         }
 
         [Authorize]
-        [HttpPut("api/events/signedup/{eventId}/{userId}/{attendNbr}")]
-        public async Task<ActionResult<string>> UserGetsSlot(int eventId, int userId, int attendNbr)
+        [HttpPut("api/events/signedup/{eventId}/{userId}/{attendNbr}/{facebookId}")]
+        public async Task<ActionResult<string>> UserGetsSlot(int eventId, int userId, int attendNbr, string facebookId)
         {
             //marks a user as getting a slot in an event
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            }
 
             EventSignup eventUser = (from e in _context.EventSignup 
             where e.Id == userId && e.TimeslotId == eventId
@@ -217,11 +248,15 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/attended/{eventId}/{userId}")]
-        public async Task<ActionResult<string>> MarkUserAsAttend(int eventId, int userId)
+        [HttpPut("api/events/attended/{eventId}/{userId}/{facebookId}")]
+        public async Task<ActionResult<string>> MarkUserAsAttend(int eventId, int userId, string facebookId)
         {
             //marks a user as attended an event, and updates user table with new count
 
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } 
+            
             EventSignup eventUser = (from e in _context.EventSignup 
             where e.Id == userId && e.TimeslotId == eventId && e.AttendNbr != null
             select e).SingleOrDefault();
@@ -249,10 +284,14 @@ namespace ComputerResetApi.Controllers
 
 
         [Authorize]
-        [HttpPut("api/events/close/{eventId}")]
-        public async Task<ContentResult> CloseEvent(int eventId)
+        [HttpPut("api/events/close/{eventId}/{facebookId}")]
+        public async Task<ContentResult> CloseEvent(int eventId, string facebookId)
         {
             //swaps open and closed status of event
+
+            if (!CheckAdmin(facebookId)) {
+                return Content("You are not permitted to use this function.");
+            } 
 
             Timeslot eventSlot = (from e in _context.Timeslot 
             where e.Id == eventId
@@ -270,6 +309,7 @@ namespace ComputerResetApi.Controllers
 
 
         [Authorize]
+        [Obsolete("Use /api/users/attrib")]
         [HttpGet("api/users/admin/{fbId}")]
         public async Task<ContentResult> GetAdminStatus(string fbId)
         {
@@ -283,33 +323,51 @@ namespace ComputerResetApi.Controllers
             return Content((existUser.AdminFlag ?? false).ToString());
         }
 
-        //[Authorize]    
-        [HttpGet("api/users/attrib/{fbId}")]
-        public async Task<ActionResult<UserAttrib>> GetUserAttrib(string fbId)
+        [Authorize]    
+        [HttpPost("api/users/attrib")]
+
+        public async Task<ActionResult<UserAttrib>> GetUserAttrib(UserSmall fbInfo)
         {
-            //gets status flag of user
+            //gets status flag of user and creates user record if not existing
 
             //do we have user with this id - ours?
-            var existUserReturn = await(from u in _context.Users 
-            where u.FbId == fbId
-            select new {u.CityNm, u.StateCd, u.RealNm, u.AdminFlag, u.VolunteerFlag}).FirstOrDefaultAsync();
+            //test if user exists in table. if not, create.
+            var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefaultAsync();
+  
+            if (existUserTest == null) {
+                var newUser = new Users(){
+                    FbId = fbInfo.facebookId,
+                    FirstNm = fbInfo.firstName,
+                    LastNm = fbInfo.lastName,
+                    EventCnt = 0
+                };
+                
+                await _context.Users.AddAsync(newUser);
+                await _context.SaveChangesAsync();
+                
+                existUserTest = _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefault();
+            } 
 
-            UserAttrib existUser = new UserAttrib(){
-                CityNm = existUserReturn.CityNm,
-                StateCd = existUserReturn.StateCd,
-                RealNm = existUserReturn.RealNm,
-                AdminFlag = existUserReturn.AdminFlag,
-                VolunteerFlag = existUserReturn.VolunteerFlag
-            };
+            UserAttrib existUser = new UserAttrib();
+            
+            existUser.CityNm = existUserTest.CityNm;
+            existUser.StateCd = existUserTest.StateCd;
+            existUser.RealNm = existUserTest.RealNm;
+            existUser.AdminFlag = existUserTest.AdminFlag;
+            existUser.VolunteerFlag = existUserTest.VolunteerFlag;
 
             return existUser;
         }
         
-        //[Authorize]
-        [HttpPut("api/users/update/admin/{id}")]
-        public async Task<ActionResult<string>> AdminUserId(int id)
+        [Authorize]
+        [HttpPut("api/users/update/admin/{id}/{facebookId}")]
+        public async Task<ActionResult<string>> AdminUserId(int id, string facebookId)
         {
             //sets admin flag of user
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
 
             //do we have user with this id - ours?
             Users existUser = (from u in _context.Users 
@@ -328,12 +386,16 @@ namespace ComputerResetApi.Controllers
 
         // PUT: api/users/update/ban
         // Bans a user
-        //[Authorize]
-        [HttpPut("api/users/update/ban/{id}")]
-        public async Task<ActionResult<string>> BanUserId(int id)
+        [Authorize]
+        [HttpPut("api/users/update/ban/{id}/{facebookId}")]
+        public async Task<ActionResult<string>> BanUserId(int id, string facebookId)
         {
             //sets ban flag of user
             //odds are pretty good we're not unbanning and we can do that in the DB
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
 
             //do we have user with this id - ours?
             Users existUser = (from u in _context.Users 
@@ -352,11 +414,14 @@ namespace ComputerResetApi.Controllers
 
         // PUT: api/users/volunteer
         // Flips flag on volunteer
-        //[Authorize]
-        [HttpPut("api/users/update/volunteer/{id}")]
-        public async Task<ActionResult<string>> VolunteerUserId(int id)
+        [Authorize]
+        [HttpPut("api/users/update/volunteer/{id}/{facebookId}")]
+        public async Task<ActionResult<string>> VolunteerUserId(int id, string facebookId)
         {
             //sets volunteer flag of user
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
 
             //do we have user with this id - ours?
             Users existUser = (from u in _context.Users 
@@ -373,7 +438,7 @@ namespace ComputerResetApi.Controllers
             return Ok("User " + id.ToString() + " has been updated with the new volunteer status.");
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet("api/ref/state")]
         public async Task<ActionResult<IEnumerable<UsStates>>> GetStateList()
         {
@@ -381,6 +446,7 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
+        [Obsolete("Use /api/ref/citylist instead")]
         [HttpGet("api/ref/city/{id}")]
         public async Task<ActionResult<IEnumerable<UsCities>>> GetCity(int id)
         {
@@ -390,12 +456,18 @@ namespace ComputerResetApi.Controllers
 
         [Authorize]
         [HttpGet("api/ref/citylist/{id}")]
-        public async Task<ActionResult<IEnumerable<UsCitiesMini>>> GetCityByState(string id)
+        public async Task<ActionResult<IEnumerable<UsCities>>> CityList(string id)
         {
-            return await _context.UsCitiesMini.Where(a => a.StateCd == id 
+            return await _context.UsCities.Where(a => a.StateCd == id 
             ).OrderBy(a => a.City).ToListAsync();
         }
 
+        private bool CheckAdmin(string fbId) {
+            var adminCheck = _context.Users.Where(a=> a.FbId == fbId)
+            .Select(a => new{adminFlag = a.AdminFlag}).SingleOrDefault();
+
+            return adminCheck.adminFlag ?? false;
+        }
 
     }
 }
