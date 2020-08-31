@@ -205,11 +205,11 @@ namespace ComputerResetApi.Controllers
             await _context.EventSignup.AddAsync(newEventSignup);
             await _context.SaveChangesAsync();
 
-            //update user table if no values exist for these 3 columns
+            //update user table since these are now in the form from earlier.
  
-            existUser.CityNm ??= signup.cityNm;
-            existUser.StateCd ??= signup.stateCd;
-            existUser.RealNm ??= signup.realname;
+            existUser.CityNm = signup.cityNm;
+            existUser.StateCd = signup.stateCd;
+            existUser.RealNm = signup.realname;
             await _context.SaveChangesAsync();
 
             return Content("You are signed up for this sale. This does not mean you have a spot for the sale yet, so please check your Facebook messages for confirmation from our volunteers.");
