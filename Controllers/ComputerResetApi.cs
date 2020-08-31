@@ -29,6 +29,7 @@ namespace ComputerResetApi.Controllers
         [HttpGet("api/events/show/open")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot()
         {
+            //this is a hit for performance unfortunately
             return await _context.Timeslot.FromSqlRaw(
                 "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
                 "inner join (select timeslot_id, count(*) signup_cnt "+
@@ -142,7 +143,7 @@ namespace ComputerResetApi.Controllers
             //only if all checks out enter the user into the table
 
             //test if user exists in table. if not, call create logic. This is now duplicated with admin call.
-            var existUserTest = await _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefaultAsync();
+            /*var existUserTest = await _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefaultAsync();
 
             if (existUserTest == null) {
                 var newUser = new Users(){
@@ -162,7 +163,7 @@ namespace ComputerResetApi.Controllers
             }
 
             //cut up to here
-
+            */
             //Kisha rule
             if (signup.realname.ToLower() == "keyboard kid") {
                 return Content("Your name is not allowed to sign up for an event.");
@@ -191,7 +192,7 @@ namespace ComputerResetApi.Controllers
                 //auto-close functionality
                 eventStats.EventClosed = true;
                 await _context.SaveChangesAsync();
-                return Content("I'm sorry, but this event is full. Please select another event.");
+                return Content("I'm sorry, but this event has filled up. Please select another event.");
             }
 
             //we passed all the checks, now lets do this thing.
