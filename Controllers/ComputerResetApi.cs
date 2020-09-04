@@ -218,6 +218,41 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
+        [HttpGet("api/events/signedup/{eventId}/{facebookId}")]
+        public IActionResult GetSignupConfirm(int eventId, string facebookId)
+        {
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } else {
+                var members =  from eventsignup in _context.EventSignup
+                join users in _context.Users
+                on eventsignup.UserId equals users.Id
+                where users.BanFlag == false && eventsignup.AttendNbr != null 
+                && eventsignup.TimeslotId == eventId
+                orderby eventsignup.AttendNbr
+                select new {
+                    eventsignup.Id,
+                    eventsignup.UserId,
+                    users.FirstNm,
+                    users.LastNm,
+                    users.RealNm,
+                    users.CityNm,
+                    users.StateCd,
+                    eventsignup.TimeslotId,
+                    eventsignup.SignupTms,
+                    eventsignup.AttendNbr,
+                    users.EventCnt,
+                    users.BanFlag
+                };
+
+                return Ok(members);
+            }
+
+        }
+
+        // GET: api/events/signedup
+        //returns all folks signed up, excluding bans and those who have attended before
+        [Authorize]
         [HttpGet("api/events/signedup/{eventId}/{maxEventsAttended}/{facebookId}")]
         public IActionResult GetSignedUpMembers(int eventId, int maxEventsAttended, string facebookId)
         {
@@ -230,7 +265,8 @@ namespace ComputerResetApi.Controllers
                 where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
                 && eventsignup.TimeslotId == eventId
                 select new {
-                    users.Id,
+                    eventsignup.Id,
+                    eventsignup.UserId,
                     users.FirstNm,
                     users.LastNm,
                     users.RealNm,
