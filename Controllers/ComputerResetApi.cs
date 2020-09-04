@@ -264,6 +264,7 @@ namespace ComputerResetApi.Controllers
                 on eventsignup.UserId equals users.Id
                 where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
                 && eventsignup.TimeslotId == eventId
+                orderby eventsignup.SignupTms
                 select new {
                     eventsignup.Id,
                     eventsignup.UserId,
