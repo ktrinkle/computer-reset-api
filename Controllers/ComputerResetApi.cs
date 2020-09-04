@@ -285,8 +285,8 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/signedup/{eventId}/{userId}/{attendNbr}/{facebookId}")]
-        public async Task<ActionResult<string>> UserGetsSlot(int eventId, int userId, int attendNbr, string facebookId)
+        [HttpPut("api/events/signedup/{slotId}/{attendNbr}/{facebookId}")]
+        public async Task<ActionResult<string>> UserGetsSlot(int slotId, int attendNbr, string facebookId)
         {
             //marks a user as getting a slot in an event
 
@@ -295,17 +295,17 @@ namespace ComputerResetApi.Controllers
             }
 
             EventSignup eventUser = (from e in _context.EventSignup 
-            where e.Id == userId && e.TimeslotId == eventId
+            where e.Id == slotId
             select e).SingleOrDefault();
 
             if (eventUser == null) {
-                return Ok("User ID not found");
+                return Ok("User signup ID not found");
             } 
             
             eventUser.AttendNbr = attendNbr;
             await _context.SaveChangesAsync();
 
-            return Ok("User " + userId.ToString() + " has been added to the event.");
+            return Ok("This user has been added to the event.");
         }
 
         [Authorize]
