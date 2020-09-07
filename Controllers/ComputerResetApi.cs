@@ -32,10 +32,8 @@ namespace ComputerResetApi.Controllers
             //this is a hit for performance unfortunately
             return await _context.Timeslot.FromSqlRaw(
                 "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
-                "inner join (select timeslot_id, count(*) signup_cnt "+
-                "from event_signup group by timeslot_id) sct " +
-                "on ts.id = sct.timeslot_id and sct.signup_cnt < ts.signup_cnt " +
                 "where not ts.event_closed " +
+                "and ts.event_start_tms >= current_timestamp " +
                 "order by ts.event_start_tms"
             ).Select(a => new TimeslotLimited {Id = a.Id, 
             EventStartTms = a.EventStartTms, 
@@ -236,12 +234,8 @@ namespace ComputerResetApi.Controllers
                     users.FirstNm,
                     users.LastNm,
                     users.RealNm,
-                    users.CityNm,
-                    users.StateCd,
                     eventsignup.TimeslotId,
-                    eventsignup.SignupTms,
-                    eventsignup.AttendNbr,
-                    users.EventCnt,
+                    eventsignup.AttendInd,
                     users.BanFlag
                 };
 
