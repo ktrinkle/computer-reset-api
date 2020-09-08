@@ -167,6 +167,11 @@ namespace ComputerResetApi.Controllers
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
+            //Grant rule
+            if ((signup.realname.ToLower() == "matthew kisha") && signup.firstNm != "Matthew" && signup.lastNm != "Kisha") {
+                return Content("I'm sorry Dave. Only Matthew Kisha can sign up as Matthew Kisha. This is highly irregular.");
+            }
+
             //run query to verify user can sign up - check the ban flag
             var existUser = _context.Users.Where( a => a.FbId == signup.fbId && a.BanFlag == false).FirstOrDefault();
 
@@ -294,7 +299,7 @@ namespace ComputerResetApi.Controllers
             select e).SingleOrDefault();
 
             if (eventUser == null) {
-                return Ok("User signup ID not found");
+                return NotFound("User signup ID not found");
             } 
             
             eventUser.AttendNbr = attendNbr;
