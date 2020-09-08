@@ -304,8 +304,8 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/attended/{eventId}/{userId}/{facebookId}")]
-        public async Task<ActionResult<string>> MarkUserAsAttend(int eventId, int userId, string facebookId)
+        [HttpPut("api/events/attended/{id}/{facebookId}")]
+        public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
         {
             //marks a user as attended an event, and updates user table with new count
 
@@ -314,18 +314,18 @@ namespace ComputerResetApi.Controllers
             } 
             
             EventSignup eventUser = (from e in _context.EventSignup 
-            where e.Id == userId && e.TimeslotId == eventId && e.AttendNbr != null
+            where e.Id == id && e.AttendNbr != null
             select e).SingleOrDefault();
 
             if (eventUser == null) {
-                return NotFound("User ID not found");
+                return NotFound("Event timeslot ID not found");
             } 
             
             eventUser.AttendInd = true;
             await _context.SaveChangesAsync();
 
             Users existUser = (from u in _context.Users 
-            where u.Id == userId
+            where u.Id == eventUser.UserId
             select u).SingleOrDefault();
 
             if (existUser == null) {
@@ -335,7 +335,7 @@ namespace ComputerResetApi.Controllers
             existUser.EventCnt = existUser.EventCnt == 0 ? 1 : existUser.EventCnt + 1;
             await _context.SaveChangesAsync();
 
-            return Ok("User " + userId.ToString() + " was marked as attending this event.");
+            return Ok("The user was marked as attending this event.");
         }
 
 
