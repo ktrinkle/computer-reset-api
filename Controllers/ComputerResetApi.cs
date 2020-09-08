@@ -230,12 +230,12 @@ namespace ComputerResetApi.Controllers
                 orderby eventsignup.AttendNbr
                 select new {
                     eventsignup.Id,
-                    eventsignup.UserId,
                     users.FirstNm,
                     users.LastNm,
                     users.RealNm,
                     eventsignup.TimeslotId,
                     eventsignup.AttendInd,
+                    eventsignup.AttendNbr,
                     users.BanFlag
                 };
 
