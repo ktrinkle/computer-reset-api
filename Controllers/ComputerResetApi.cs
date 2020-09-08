@@ -308,6 +308,7 @@ namespace ComputerResetApi.Controllers
         public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
         {
             //marks a user as attended an event, and updates user table with new count
+            int eventAttendInd;
 
             if (!CheckAdmin(facebookId)) {
                 return Unauthorized();
@@ -321,7 +322,13 @@ namespace ComputerResetApi.Controllers
                 return NotFound("Event timeslot ID not found");
             } 
             
-            eventUser.AttendInd = true;
+            if (eventUser.AttendInd == false || eventUser.AttendInd == null) {
+                eventUser.AttendInd = true;
+                eventAttendInd = 1;
+            } else {
+                eventUser.AttendInd = false;
+                eventAttendInd = -1;               
+            }
             await _context.SaveChangesAsync();
 
             Users existUser = (from u in _context.Users 
@@ -332,7 +339,8 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User ID not found");
             } 
             
-            existUser.EventCnt = existUser.EventCnt == 0 ? 1 : existUser.EventCnt + 1;
+            //increment or decrement event attend count. If <= 0, set to 0.
+            existUser.EventCnt = (existUser.EventCnt + eventAttendInd) <= 0 ? 0 : (existUser.EventCnt + eventAttendInd);
             await _context.SaveChangesAsync();
 
             return Ok("The user was marked as attending this event.");
