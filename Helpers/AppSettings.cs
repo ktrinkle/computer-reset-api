@@ -8,5 +8,6 @@ namespace ComputerResetApi.Helpers
         public string User { get; set; }
         public string Shaker { get; set; }
         public string[] Whitelist { get; set; }
+        public string SignupOpen{ get; set; }
     }
 }
