@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using ComputerResetApi.Models;
 using System;
 using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.Extensions.Options;
+using ComputerResetApi.Helpers;
 
 namespace ComputerResetApi.Controllers
 {
@@ -16,11 +17,13 @@ namespace ComputerResetApi.Controllers
     public class ComputerResetController : Controller
     {
        private readonly cr9525signupContext _context;
+       private readonly IOptions<AppSettings> _appSettings;
        private static readonly HttpClient _client = new HttpClient();
 
-        public ComputerResetController(cr9525signupContext context)
+        public ComputerResetController(cr9525signupContext context, IOptions<AppSettings> appSettings)
         {
             _context = context;
+            _appSettings = appSettings;
 
         }
 
@@ -32,8 +35,8 @@ namespace ComputerResetApi.Controllers
             //this is a hit for performance unfortunately
             return await _context.Timeslot.FromSqlRaw(
                 "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
-                "where not ts.event_closed and ts.event_open_tms >= current_timestamp" +
-                "and ts.event_start_tms >= current_timestamp " +
+                "where not ts.event_closed and current_timestamp >= ts.event_open_tms " +
+                "and ts.event_start_tms >= now() " +
                 "order by ts.event_start_tms"
             ).Select(a => new TimeslotLimited {Id = a.Id, 
             EventStartTms = a.EventStartTms, 
@@ -215,7 +218,7 @@ namespace ComputerResetApi.Controllers
             existUser.RealNm = signup.realname;
             await _context.SaveChangesAsync();
 
-            return Content("You are signed up for this sale. This does not mean you have a spot for the sale yet, so please check your Facebook messages for confirmation from our volunteers.");
+            return Content("You are added to the list for this event. Since we need to verify that you can attend the sale, please check your Facebook messages for confirmation from the volunteers.");
         }
 
         // GET: api/events/signedup
@@ -527,6 +530,18 @@ namespace ComputerResetApi.Controllers
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;
+        }
+
+        [HttpGet("api/siteup")]
+        public IActionResult checkIfOpen() {
+            var signupSetting = _appSettings.Value;
+            string signupOpen = signupSetting.SignupOpen.ToString();
+
+            if (signupOpen != "Y" && signupOpen != "N" ){
+                signupOpen = "N";
+            }
+
+            return Ok(signupOpen);
         }
 
     }
