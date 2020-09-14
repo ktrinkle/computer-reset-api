@@ -32,7 +32,7 @@ namespace ComputerResetApi.Controllers
             //this is a hit for performance unfortunately
             return await _context.Timeslot.FromSqlRaw(
                 "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
-                "where not ts.event_closed " +
+                "where not ts.event_closed and ts.event_open_tms >= current_timestamp" +
                 "and ts.event_start_tms >= current_timestamp " +
                 "order by ts.event_start_tms"
             ).Select(a => new TimeslotLimited {Id = a.Id, 
