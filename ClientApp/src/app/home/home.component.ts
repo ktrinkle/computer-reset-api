@@ -22,6 +22,4 @@ export class HomeComponent implements OnInit {
       .then(data => this.signupTest = data);
   }
 
-  }
-
 }
