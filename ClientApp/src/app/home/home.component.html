@@ -42,7 +42,8 @@
       </mat-list>
     </mat-card-content>
  <mat-card-actions>
-  <a mat-raised-button color="primary" class="big-button-center" href="https://computerresetsignup.azurewebsites.net/">Sign up for an event</a>
+  <a *ngIf='signupTest=="Y"' mat-raised-button color="primary" class="big-button-center" href="https://computerresetsignup.azurewebsites.net/">Sign up for an event</a>
+  <div *ngIf='signupTest=="N"'>No events are currently available to sign up for.</div>
   <p></p><p class="textcenter">Facebook ID and membership in the 
     <a href="https://www.facebook.com/groups/ComputerResetWL/">Computer Reset Liquidation Facebook group</a>
      is required for event signup. You will log in with Facebook at this link.</p>
