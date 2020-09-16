@@ -44,6 +44,8 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
+                entity.Property(e => e.SignupTxt).HasColumnName("signup_txt");
+
                 entity.HasOne(d => d.Timeslot)
                     .WithMany()
                     .HasForeignKey(d => d.TimeslotId)
