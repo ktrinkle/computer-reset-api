@@ -75,7 +75,6 @@ namespace ComputerResetApi.Controllers
                 return null;
             } else {
                 return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
-                && a.EventStartTms <= DateTime.Today.AddDays(1) 
                 ).OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }        
