@@ -11,6 +11,7 @@ namespace ComputerResetApi
         public int? AttendNbr { get; set; }
         public bool? AttendInd { get; set; }
         public int Id { get; set; }
+        public string SignupTxt { get; set; }
 
         public virtual Timeslot Timeslot { get; set; }
         public virtual Users User { get; set; }
