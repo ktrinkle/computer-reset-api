@@ -21,6 +21,8 @@ namespace ComputerResetApi.Models
         public virtual DbSet<UsStates> UsStates { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
+        public virtual DbSet<BanListText> BanListText { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
 
@@ -189,7 +191,40 @@ namespace ComputerResetApi.Models
             });
 
             OnModelCreatingPartial(modelBuilder);
+
+            modelBuilder.Entity<BanListText>(entity =>
+            {
+                entity.ToTable("ban_list_text");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.CityNm)
+                    .HasColumnName("city_nm")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.FirstNm)
+                    .IsRequired()
+                    .HasColumnName("first_nm")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.LastNm)
+                    .IsRequired()
+                    .HasColumnName("last_nm")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.StateCd)
+                    .HasColumnName("state_cd")
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.CommentTxt)
+                    .IsRequired()
+                    .HasColumnName("comment_txt")
+                    .HasMaxLength(200);
+            });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
