@@ -290,6 +290,28 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
+        [HttpPost("api/events/signup/note")]
+        public async Task<ContentResult> UpdateSignupNote(EventSignupNote signup)
+        {
+            if (!CheckAdmin(signup.fbId)) {
+                return Content("You are not allowed to access this function.");
+            }            
+            
+            if (signup.Id <= 0) {
+                return Content("A valid timeslot does not exist in this request.");
+            }
+
+            EventSignup eventSignup = await (from e in _context.EventSignup 
+            where e.Id == signup.Id select e).SingleOrDefaultAsync();
+
+            eventSignup.SignupTxt = signup.SignupTxt;
+
+            await _context.SaveChangesAsync();
+
+            return Content("The signup note was modified.");
+        }
+
+        [Authorize]
         [HttpPut("api/events/attended/{id}/{facebookId}")]
         public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
         {

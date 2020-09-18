@@ -27,4 +27,11 @@ namespace ComputerResetApi
         public string firstNm { get; set; }
         public string lastNm { get; set; }
     }
+
+    public partial class EventSignupNote
+    {
+        public int Id { get; set; }
+        public string SignupTxt { get; set; }
+        public string fbId { get; set; }
+    }
 }
