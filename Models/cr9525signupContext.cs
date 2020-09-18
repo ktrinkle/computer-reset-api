@@ -203,12 +203,10 @@ namespace ComputerResetApi.Models
                     .HasMaxLength(50);
 
                 entity.Property(e => e.FirstNm)
-                    .IsRequired()
                     .HasColumnName("first_nm")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.LastNm)
-                    .IsRequired()
                     .HasColumnName("last_nm")
                     .HasMaxLength(50);
 
@@ -217,7 +215,6 @@ namespace ComputerResetApi.Models
                     .HasMaxLength(10);
 
                 entity.Property(e => e.CommentTxt)
-                    .IsRequired()
                     .HasColumnName("comment_txt")
                     .HasMaxLength(200);
             });
