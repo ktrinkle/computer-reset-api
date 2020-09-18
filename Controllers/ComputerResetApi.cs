@@ -32,7 +32,6 @@ namespace ComputerResetApi.Controllers
         [HttpGet("api/events/show/open")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot()
         {
-            //this is a hit for performance unfortunately
             return await _context.Timeslot.FromSqlRaw(
                 "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
                 "where not ts.event_closed and current_timestamp >= ts.event_open_tms " +
@@ -138,32 +137,6 @@ namespace ComputerResetApi.Controllers
         {
             int ourUserId;
 
-            //check if user is banned
-            //check if user has already signed up for this event
-            //only if all checks out enter the user into the table
-
-            //test if user exists in table. if not, call create logic. This is now duplicated with admin call.
-            /*var existUserTest = await _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefaultAsync();
-
-            if (existUserTest == null) {
-                var newUser = new Users(){
-                    FbId = signup.fbId,
-                    FirstNm = signup.firstNm,
-                    LastNm = signup.lastNm,
-                    EventCnt = 0
-                };
-                
-                await _context.Users.AddAsync(newUser);
-                await _context.SaveChangesAsync();
-                
-                var rtnList = _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefault();
-                ourUserId = rtnList.Id;
-            } else {
-                ourUserId = existUserTest.Id;
-            }
-
-            //cut up to here
-            */
             //Kisha rule
             if (signup.realname.ToLower() == "keyboard kid") {
                 return Content("Your name is not allowed to sign up for an event.");
@@ -289,7 +262,7 @@ namespace ComputerResetApi.Controllers
 
         [Authorize]
         [HttpPut("api/events/signedup/{slotId}/{attendNbr}/{facebookId}")]
-        public async Task<ActionResult<string>> UserGetsSlot(int slotId, int attendNbr, string facebookId)
+        public async Task<ActionResult<string>> UserGetsSlot(int slotId, int? attendNbr, string facebookId)
         {
             //marks a user as getting a slot in an event
 
@@ -304,6 +277,11 @@ namespace ComputerResetApi.Controllers
             if (eventUser == null) {
                 return NotFound("User signup ID not found");
             } 
+
+            //removal functionality
+            if (attendNbr == 0 ) {
+                attendNbr = null;
+            }
             
             eventUser.AttendNbr = attendNbr;
             await _context.SaveChangesAsync();
@@ -413,6 +391,13 @@ namespace ComputerResetApi.Controllers
                     LastNm = fbInfo.lastName,
                     EventCnt = 0
                 };
+
+                //auto-ban functionality
+                var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.firstName && a.LastNm == fbInfo.lastName).FirstOrDefaultAsync();
+
+                if (prebanUser != null) {
+                    newUser.BanFlag = true;
+                }
                 
                 await _context.Users.AddAsync(newUser);
                 await _context.SaveChangesAsync();
