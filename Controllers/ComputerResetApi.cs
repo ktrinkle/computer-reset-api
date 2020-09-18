@@ -190,7 +190,7 @@ namespace ComputerResetApi.Controllers
             existUser.RealNm = signup.realname;
             await _context.SaveChangesAsync();
 
-            return Content("You are added to the list for this event. Since we need to verify that you can attend the sale, please check your Facebook messages for confirmation from the volunteers.");
+            return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages for confirmation from the volunteers.");
         }
 
         // GET: api/events/signedup
