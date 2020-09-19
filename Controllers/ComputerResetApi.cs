@@ -414,7 +414,7 @@ namespace ComputerResetApi.Controllers
                     EventCnt = 0
                 };
 
-                //auto-ban functionality
+                //auto-ban functionality based on Facebook name match.
                 var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.firstName && a.LastNm == fbInfo.lastName).FirstOrDefaultAsync();
 
                 if (prebanUser != null) {
