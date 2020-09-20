@@ -29,17 +29,27 @@ namespace ComputerResetApi.Controllers
 
         // GET: api/events/show
         [Authorize]
-        [HttpGet("api/events/show/open")]
-        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot()
+        [HttpGet("api/events/show/open/{facebookId}")]
+        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
         {
-            return await _context.Timeslot.FromSqlRaw(
-                "select ts.id, ts.event_start_tms, ts.event_end_tms from timeslot ts " +
-                "where not ts.event_closed and current_timestamp >= ts.event_open_tms " +
-                "and ts.event_start_tms >= now() " +
-                "order by ts.event_start_tms"
-            ).Select(a => new TimeslotLimited {Id = a.Id, 
+            return await _context.TimeslotLimited.FromSqlRaw(
+                "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms, "+
+                "case when ss.attend_nbr <= ts.event_slot_cnt then 'S' "+
+                "when ss.attend_nbr <= (ts.event_slot_cnt + ts.overbook_cnt) then 'C' "+
+                "when ss.timeslot_id is not null then 'L' else null end userslot, "+
+                "ts.event_closed ClosedInd "+
+                "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr "+
+                "from event_signup es "+
+                "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
+                "on ts.id = ss.timeslot_id "+
+                "where current_timestamp >= ts.event_open_tms "+
+                "and ts.event_start_tms >= now() - interval '1' day "+
+                "order by ts.event_start_tms", facebookId
+            ).Select(a => new TimeslotLimited(){Id = a.Id, 
             EventStartTms = a.EventStartTms, 
-            EventEndTms = a.EventEndTms}).ToListAsync();
+            EventEndTms = a.EventEndTms,
+            UserSlot = a.UserSlot,
+            ClosedInd = a.ClosedInd}).ToListAsync();
         }
 
         [Authorize]
@@ -49,7 +59,7 @@ namespace ComputerResetApi.Controllers
             if (!CheckAdmin(facebookId)) {
                 return null;
             } else {
-                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Now 
+                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
                 ).OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }
@@ -65,18 +75,7 @@ namespace ComputerResetApi.Controllers
                 ).OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }
-
-        [Authorize]
-        [HttpGet("api/events/show/dayof/{facebookId}")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowDayOfEvent(string facebookId)
-        {
-            if (!CheckAdmin(facebookId)) {
-                return null;
-            } else {
-                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
-                ).OrderBy(a => a.EventStartTms).ToListAsync();
-            }
-        }        
+  
         // POST: api/events/create
         // Creates a new session
         [Authorize]
@@ -379,21 +378,6 @@ namespace ComputerResetApi.Controllers
             return Content("The status of event " + eventId.ToString() + " has changed.");
         }
 
-
-        [Authorize]
-        [Obsolete("Use /api/users/attrib")]
-        [HttpGet("api/users/admin/{fbId}")]
-        public async Task<ContentResult> GetAdminStatus(string fbId)
-        {
-            //gets admin flag of user
-
-            //do we have user with this id - ours?
-            Users existUser = await(from u in _context.Users 
-            where u.FbId == fbId && u.AdminFlag == true
-            select u).SingleOrDefaultAsync();
-
-            return Content((existUser.AdminFlag ?? false).ToString());
-        }
 
         [Authorize]    
         [HttpPost("api/users/attrib")]
