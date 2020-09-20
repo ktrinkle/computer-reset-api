@@ -23,6 +23,8 @@ namespace ComputerResetApi.Models
 
         public virtual DbSet<BanListText> BanListText { get; set; }
 
+        public DbSet<TimeslotLimited> TimeslotLimited { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
 
@@ -98,6 +100,7 @@ namespace ComputerResetApi.Models
                     .HasColumnName("signup_cnt")
                     .HasDefaultValueSql("30")
                     .HasComment("Signup limitations.");
+
             });
 
             modelBuilder.Entity<UsCities>(entity =>

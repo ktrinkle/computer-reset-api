@@ -20,6 +20,9 @@ namespace ComputerResetApi
         public int Id { get; set; }
         public DateTime? EventStartTms { get; set; }
         public DateTime? EventEndTms { get; set; }
+        public string UserSlot { get; set; }
+        public bool? ClosedInd { get; set; }
+
     }
 
     public partial class TimeslotAdmin
