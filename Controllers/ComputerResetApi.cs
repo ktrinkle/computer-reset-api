@@ -30,7 +30,7 @@ namespace ComputerResetApi.Controllers
         [Obsolete("Use /api/events/show/open/fbID")]
         [Authorize]
         [HttpGet("api/events/show/open")]
-        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
+        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenEvent()
         {
             return await _context.TimeslotLimited.FromSqlRaw(
                 "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms " +
