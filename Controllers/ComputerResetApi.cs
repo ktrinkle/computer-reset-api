@@ -27,7 +27,25 @@ namespace ComputerResetApi.Controllers
 
         }
 
+        [Obsolete("Use /api/events/show/open/fbID")]
+        [Authorize]
+        [HttpGet("api/events/show/open")]
+        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
+        {
+            return await _context.TimeslotLimited.FromSqlRaw(
+                "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms " +
+                "from timeslot ts " +
+                "where not ts.event_closed and current_timestamp >= ts.event_open_tms "+
+                "and ts.event_start_tms >= now() "+
+                "order by ts.event_start_tms"
+            ).Select(a => new TimeslotLimited(){Id = a.Id, 
+            EventStartTms = a.EventStartTms, 
+            EventEndTms = a.EventEndTms,
+            UserSlot = null,
+            ClosedInd = null}).ToListAsync();
+        }
         // GET: api/events/show
+        
         [Authorize]
         [HttpGet("api/events/show/open/{facebookId}")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
