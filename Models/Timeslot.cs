@@ -13,6 +13,7 @@ namespace ComputerResetApi
         public bool? EventClosed { get; set; }
         public int? OverbookCnt { get; set; }
         public int? SignupCnt { get; set; }
+        public string EventNote { get; set; }
     }
 
      public partial class TimeslotLimited
@@ -22,6 +23,7 @@ namespace ComputerResetApi
         public DateTime? EventEndTms { get; set; }
         public string UserSlot { get; set; }
         public bool? EventClosed { get; set; }
+        public string EventNote { get; set; }
 
     }
 
@@ -36,5 +38,6 @@ namespace ComputerResetApi
         public int? OverbookCnt { get; set; }
         public int? SignupCnt { get; set; }
         public string facebookId { get; set; }
+        public string EventNote { get; set; }
     }
 }

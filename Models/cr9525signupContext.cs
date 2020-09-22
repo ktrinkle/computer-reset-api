@@ -101,6 +101,10 @@ namespace ComputerResetApi.Models
                     .HasDefaultValueSql("30")
                     .HasComment("Signup limitations.");
 
+                entity.Property(e => e.EventNote)
+                    .HasColumnName("event_note")
+                    .HasMaxLength(100);
+
             });
 
             modelBuilder.Entity<UsCities>(entity =>

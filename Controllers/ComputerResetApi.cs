@@ -55,7 +55,7 @@ namespace ComputerResetApi.Controllers
                 "case when ss.attend_nbr <= ts.event_slot_cnt then 'S' "+
                 "when ss.attend_nbr <= (ts.event_slot_cnt + ts.overbook_cnt) then 'C' "+
                 "when ss.timeslot_id is not null then 'L' else null end userslot, "+
-                "ts.event_closed EventClosed "+
+                "ts.event_closed EventClosed, ts.event_note EventNote "+
                 "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr "+
                 "from event_signup es "+
                 "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
@@ -67,7 +67,8 @@ namespace ComputerResetApi.Controllers
             EventStartTms = a.EventStartTms, 
             EventEndTms = a.EventEndTms,
             UserSlot = a.UserSlot,
-            EventClosed = a.EventClosed}).ToListAsync();
+            EventClosed = a.EventClosed,
+            EventNote = a.EventNote}).ToListAsync();
         }
 
         [Authorize]
@@ -138,7 +139,8 @@ namespace ComputerResetApi.Controllers
                 EventClosed = false,
                 EventSlotCnt = eventNew.EventSlotCnt,
                 OverbookCnt = eventNew.OverbookCnt,
-                SignupCnt = eventNew.SignupCnt
+                SignupCnt = eventNew.SignupCnt,
+                EventNote = eventNew.EventNote
             };
             await _context.Timeslot.AddAsync(newSession);
             await _context.SaveChangesAsync();
