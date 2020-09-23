@@ -235,7 +235,9 @@ namespace ComputerResetApi.Controllers
                     eventsignup.TimeslotId,
                     eventsignup.AttendInd,
                     eventsignup.AttendNbr,
-                    users.BanFlag
+                    users.BanFlag,
+                    users.CityNm,
+                    users.StateCd
                 };
 
                 return Ok(members);
@@ -519,6 +521,33 @@ namespace ComputerResetApi.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("User " + id.ToString() + " has been updated with the new volunteer status.");
+        }
+
+                [Authorize]
+        [HttpPut("api/events/move/{slotId}/{newEventId}/{facebookId}")]
+        public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId, string facebookId)
+        {
+            //marks a user as getting a slot in an event
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            }
+
+            EventSignup eventUser = (from e in _context.EventSignup 
+            where e.Id == slotId
+            select e).SingleOrDefault();
+
+            if (eventUser == null) {
+                return NotFound("User signup ID not found");
+            } 
+
+            //move from old to new
+            //removal functionality
+            
+            eventUser.TimeslotId = newEventId;
+            await _context.SaveChangesAsync();
+
+            return Ok("This user has been moved to the event.");
         }
 
         [Authorize]
