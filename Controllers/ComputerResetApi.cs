@@ -225,7 +225,7 @@ namespace ComputerResetApi.Controllers
                 join users in _context.Users
                 on eventsignup.UserId equals users.Id
                 where users.BanFlag == false && eventsignup.AttendNbr != null 
-                && eventsignup.TimeslotId == eventId
+                && eventsignup.TimeslotId == eventId && eventsignup.DeleteInd == false
                 orderby eventsignup.AttendNbr
                 select new {
                     eventsignup.Id,
@@ -237,7 +237,8 @@ namespace ComputerResetApi.Controllers
                     eventsignup.AttendNbr,
                     users.BanFlag,
                     users.CityNm,
-                    users.StateCd
+                    users.StateCd,
+                    eventsignup.ConfirmInd
                 };
 
                 return Ok(members);
@@ -258,7 +259,7 @@ namespace ComputerResetApi.Controllers
                 join users in _context.Users
                 on eventsignup.UserId equals users.Id
                 where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
-                && eventsignup.TimeslotId == eventId
+                && eventsignup.TimeslotId == eventId && eventsignup.DeleteInd == false
                 orderby eventsignup.SignupTms
                 select new {
                     eventsignup.Id,
@@ -274,6 +275,71 @@ namespace ComputerResetApi.Controllers
                     users.EventCnt,
                     users.BanFlag,
                     eventsignup.SignupTxt
+                };
+
+                return Ok(members);
+            }
+
+        }
+
+        /* Work in progress
+        [Authorize]
+        [HttpGet("api/events/standby/list/{facebookId}")]
+        public IActionResult GetStandbyDateEvents(string facebookId)
+        {
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } else {
+                var slotmaster = from timeslot in _context.Timeslot
+                where timeslot.EventStartTms >= DateTime.Now
+                orderby timeslot.EventStartTms
+                select new {
+                    timeslot.Id,
+                    timeslot.EventStartTms.Date,
+                    timeslot.EventStartTms
+                }; 
+
+                var slots = new {
+                    Id = slotmaster.Id,
+                    EventDate = slotmaster.EventStartTms,
+                    EventTime = slotmaster.
+
+                } 
+
+                return Ok(slots);
+            }
+
+        }*/
+        
+        // GET: api/events/standby
+        //returns all folks signed up, excluding bans and those who have attended before
+        [Authorize]
+        [HttpGet("api/events/standby/{eventDate}/{facebookId}")]
+        public IActionResult GetStandby(DateTime eventDate, string facebookId)
+        {
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } else {
+                var members =  from eventsignup in _context.EventSignup
+                join users in _context.Users
+                on eventsignup.UserId equals users.Id
+                join timeslot in _context.Timeslot
+                on eventsignup.TimeslotId equals timeslot.Id
+                where users.BanFlag == false && eventsignup.AttendNbr >= timeslot.SignupCnt
+                && timeslot.EventStartTms >= eventDate.Date
+                && timeslot.EventStartTms < eventDate.Date.AddDays(1)
+                && eventsignup.DeleteInd == false
+                orderby eventsignup.SignupTms
+                select new {
+                    eventsignup.Id,
+                    users.FirstNm,
+                    users.LastNm,
+                    users.RealNm,
+                    eventsignup.TimeslotId,
+                    eventsignup.AttendInd,
+                    users.BanFlag,
+                    users.CityNm,
+                    users.StateCd
                 };
 
                 return Ok(members);
@@ -332,6 +398,38 @@ namespace ComputerResetApi.Controllers
             return Content("The signup note was modified.");
         }
 
+        [Authorize]
+        [HttpPut("api/events/confirm/{id}/{facebookId}")]
+        public async Task<ActionResult<string>> ConfirmUser(int id, string facebookId)
+        {
+            //marks a user as confirmed for an event
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } 
+            
+            EventSignup eventUser = (from e in _context.EventSignup 
+            where e.Id == id && e.AttendNbr != null
+            select e).SingleOrDefault();
+
+            if (eventUser == null) {
+                return NotFound("Event timeslot ID not found");
+            } 
+
+            string returnMsg = "";
+            
+            if (eventUser.ConfirmInd == false) {
+                eventUser.ConfirmInd = true;
+                returnMsg = "The user was confirmed for this event.";
+            } else {
+                eventUser.ConfirmInd = false;  
+                returnMsg = "The user was removed from this event.";          
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok(returnMsg);
+        }
+        
         [Authorize]
         [HttpPut("api/events/attended/{id}/{facebookId}")]
         public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
@@ -523,7 +621,7 @@ namespace ComputerResetApi.Controllers
             return Ok("User " + id.ToString() + " has been updated with the new volunteer status.");
         }
 
-                [Authorize]
+        [Authorize]
         [HttpPut("api/events/move/{slotId}/{newEventId}/{facebookId}")]
         public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId, string facebookId)
         {
