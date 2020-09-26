@@ -367,7 +367,7 @@ namespace ComputerResetApi.Controllers
             } 
 
             //removal functionality
-            if (attendNbr == 0 ) {
+            if (attendNbr == 0 || attendNbr == null) {
                 attendNbr = null;
             }
             
@@ -423,7 +423,8 @@ namespace ComputerResetApi.Controllers
                 eventUser.ConfirmInd = true;
                 returnMsg = "The user was confirmed for this event.";
             } else {
-                eventUser.ConfirmInd = false;  
+                eventUser.ConfirmInd = false;
+                eventUser.AttendNbr = null; //auto-remove
                 returnMsg = "The user was removed from this event.";          
             }
             await _context.SaveChangesAsync();
