@@ -50,6 +50,10 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.SignupTxt).HasColumnName("signup_txt");
 
+                entity.Property(e => e.ConfirmInd).HasColumnName("confirm_ind");
+
+                entity.Property(e => e.DeleteInd).HasColumnName("delete_ind");
+
                 entity.HasOne(d => d.Timeslot)
                     .WithMany()
                     .HasForeignKey(d => d.TimeslotId)
