@@ -274,7 +274,8 @@ namespace ComputerResetApi.Controllers
                     eventsignup.AttendNbr,
                     users.EventCnt,
                     users.BanFlag,
-                    eventsignup.SignupTxt
+                    eventsignup.SignupTxt,
+                    eventsignup.ConfirmInd
                 };
 
                 return Ok(members);
