@@ -130,22 +130,38 @@ namespace ComputerResetApi.Controllers
                 return Ok("There is already an event with this start date and time.");
             }
 
-            //everything checks out, make a new record and set open to false
+            //everything checks out, confirm that event exists and add or update
 
-            var newSession = new Timeslot(){
-                EventStartTms = eventNew.EventStartTms,
-                EventEndTms = eventNew.EventEndTms,
-                EventOpenTms = eventNew.EventOpenTms,
-                EventClosed = false,
-                EventSlotCnt = eventNew.EventSlotCnt,
-                OverbookCnt = eventNew.OverbookCnt,
-                SignupCnt = eventNew.SignupCnt,
-                EventNote = eventNew.EventNote
-            };
-            await _context.Timeslot.AddAsync(newSession);
+            string message = "";
+
+            var oldSession = _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefault();
+
+            if (oldSession.Id == eventNew.Id) {
+                oldSession.EventStartTms = eventNew.EventStartTms;
+                oldSession.EventEndTms = eventNew.EventEndTms;
+                oldSession.EventOpenTms = eventNew.EventOpenTms;
+                oldSession.EventSlotCnt = eventNew.EventSlotCnt;
+                oldSession.SignupCnt = eventNew.SignupCnt;
+                oldSession.OverbookCnt = eventNew.OverbookCnt;
+                oldSession.EventNote = eventNew.EventNote;
+                message = "updated.";
+            } else {
+                var newSession = new Timeslot(){
+                    EventStartTms = eventNew.EventStartTms,
+                    EventEndTms = eventNew.EventEndTms,
+                    EventOpenTms = eventNew.EventOpenTms,
+                    EventClosed = false,
+                    EventSlotCnt = eventNew.EventSlotCnt,
+                    OverbookCnt = eventNew.OverbookCnt,
+                    SignupCnt = eventNew.SignupCnt,
+                    EventNote = eventNew.EventNote
+                };
+                await _context.Timeslot.AddAsync(newSession);
+                message = "added.";
+            }
             await _context.SaveChangesAsync();
 
-            return Ok("The new event was successfully created.");
+            return Ok("The new event was successfully " + message);
         }
 
         // POST: api/events/signup
