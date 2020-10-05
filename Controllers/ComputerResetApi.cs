@@ -61,7 +61,7 @@ namespace ComputerResetApi.Controllers
                 "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
                 "on ts.id = ss.timeslot_id "+
                 "where current_timestamp >= ts.event_open_tms "+
-                "and ts.event_start_tms >= now() "+
+                "and ts.event_start_tms >= now() and (not ts.private_event_ind)"+
                 "order by ts.event_start_tms", facebookId
             ).Select(a => new TimeslotLimited(){Id = a.Id, 
             EventStartTms = a.EventStartTms, 
