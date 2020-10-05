@@ -109,6 +109,9 @@ namespace ComputerResetApi.Models
                     .HasColumnName("event_note")
                     .HasMaxLength(100);
 
+                entity.Property(e => e.PrivateEventInd)
+                    .HasColumnName("private_event_ind");
+
             });
 
             modelBuilder.Entity<UsCities>(entity =>
