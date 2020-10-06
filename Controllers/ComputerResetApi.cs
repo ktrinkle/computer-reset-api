@@ -284,7 +284,6 @@ namespace ComputerResetApi.Controllers
 
         }
 
-        /* Work in progress
         [Authorize]
         [HttpGet("api/events/standby/list/{facebookId}")]
         public IActionResult GetStandbyDateEvents(string facebookId)
@@ -295,24 +294,40 @@ namespace ComputerResetApi.Controllers
                 var slotmaster = from timeslot in _context.Timeslot
                 where timeslot.EventStartTms >= DateTime.Now
                 orderby timeslot.EventStartTms
-                select new {
-                    timeslot.Id,
-                    timeslot.EventStartTms.Date,
-                    timeslot.EventStartTms
+                select new TimeslotStandby {
+                    Id = timeslot.Id,
+                    EventDate = timeslot.EventStartTms,
+                    EventSlotCnt = timeslot.EventSlotCnt
                 }; 
 
-                var slots = new {
-                    Id = slotmaster.Id,
-                    EventDate = slotmaster.EventStartTms,
-                    EventTime = slotmaster.
+                var standbyListCombo = from eventsignup in _context.EventSignup
+                    join slot in slotmaster on eventsignup.TimeslotId equals slot.Id
+                    join users in _context.Users
+                    on eventsignup.UserId equals users.Id
+                    where users.BanFlag == false && eventsignup.AttendNbr >= slot.EventSlotCnt
+                    select new { 
+                        eventsignup.Id,
+                        users.FirstNm,
+                        users.LastNm,
+                        users.RealNm,
+                        eventsignup.TimeslotId,
+                        eventsignup.AttendInd,
+                        users.BanFlag,
+                        users.CityNm,
+                        users.StateCd,
+                        slot.EventDate
+                    };
 
-                } 
+                var rtnArray = new {
+                    slot = slotmaster,
+                    standbys = standbyListCombo
+                };
 
-                return Ok(slots);
+                return Ok(rtnArray);
             }
 
-        }*/
-        
+        }
+       
         // GET: api/events/standby
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
@@ -544,7 +559,48 @@ namespace ComputerResetApi.Controllers
 
             return existUser;
         }
-        
+
+        //This is currently not saving to the DB
+        [Authorize]
+        [HttpPost("api/users/update/ban")]
+        public async Task<ActionResult<string>> AdminUserId(BanListForm banList)
+        {
+            //sets admin flag of user
+
+            if (!CheckAdmin(banList.facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+
+            //do we have user with this id - ours?
+            BanListText banText = await (from b in _context.BanListText 
+            where b.Id == banList.Id
+            select b).SingleOrDefaultAsync();
+
+            if (banText == null) {
+                banText = new BanListText(){
+                    //assume new input
+                    FirstNm = banList.FirstNm,
+                    LastNm = banList.LastNm,
+                    CityNm = banList.CityNm,
+                    StateCd = banList.StateCd,
+                    CommentTxt = banList.CommentTxt 
+                };
+
+                _context.BanListText.Add(banText);
+                return Ok("This user was added to the manual ban list.");
+            } else {
+                //we have a response so update
+                banText.FirstNm = banList.FirstNm;
+                banText.LastNm = banList.LastNm;
+                banText.CityNm = banList.CityNm;
+                banText.StateCd = banList.StateCd;
+                banText.CommentTxt = banList.CommentTxt;
+
+                await _context.SaveChangesAsync();
+                return Ok("This user was updated on the manual ban list.");
+            }
+        }
+
         [Authorize]
         [HttpPut("api/users/update/admin/{id}/{facebookId}")]
         public async Task<ActionResult<string>> AdminUserId(int id, string facebookId)
@@ -622,6 +678,43 @@ namespace ComputerResetApi.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("User " + id.ToString() + " has been updated with the new volunteer status.");
+        }
+
+        [Authorize]    
+        [HttpGet("api/users/bantext/{facebookId}")]
+
+        public async Task<ActionResult<List<BanListText>>> GetBanListText(string facebookId)
+        {
+            //gets list of manually text banned users
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+
+             //do we have user with this id - ours?
+            List<BanListText> bannedFolks = await (from b in _context.BanListText 
+            select b).ToListAsync();
+
+            return Ok(bannedFolks);
+        }
+
+        [Authorize]    
+        [HttpGet("api/users/{facebookId}")]
+
+        public async Task<ActionResult<UserAttrib>> GetUserList(string facebookId)
+        {
+            //gets lookup of users for typeahead
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+
+            var members = await (from users in _context.Users
+            select new {
+                users.Id,
+                users.FirstNm,
+                users.LastNm
+            }).ToListAsync();
+
+            return Ok(members);
         }
 
         [Authorize]
