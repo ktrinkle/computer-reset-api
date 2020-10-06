@@ -8,8 +8,8 @@ namespace ComputerResetApi
         public int Id { get; set; }
         public DateTime EventStartTms { get; set; }
         public DateTime EventEndTms { get; set; }
-        public int? EventSlotCnt { get; set; }
-        public DateTime? EventOpenTms { get; set; }
+        public int EventSlotCnt { get; set; }
+        public DateTime EventOpenTms { get; set; }
         public bool? EventClosed { get; set; }
         public int? OverbookCnt { get; set; }
         public int? SignupCnt { get; set; }
@@ -33,8 +33,8 @@ namespace ComputerResetApi
         public int Id { get; set; }
         public DateTime EventStartTms { get; set; }
         public DateTime EventEndTms { get; set; }
-        public int? EventSlotCnt { get; set; }
-        public DateTime? EventOpenTms { get; set; }
+        public int EventSlotCnt { get; set; }
+        public DateTime EventOpenTms { get; set; }
         public bool? EventClosed { get; set; }
         public int? OverbookCnt { get; set; }
         public int? SignupCnt { get; set; }
@@ -48,6 +48,7 @@ namespace ComputerResetApi
         public int Id { get; set; }
         public DateTime EventDate { get; set; }
         public DateTime EventTime { get; set; }
+        public int EventSlotCnt { get; set; }
     }
 
 }

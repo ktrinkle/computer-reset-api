@@ -204,8 +204,6 @@ namespace ComputerResetApi.Models
                     .HasDefaultValueSql("false");
             });
 
-            OnModelCreatingPartial(modelBuilder);
-
             modelBuilder.Entity<BanListText>(entity =>
             {
                 entity.ToTable("ban_list_text");
