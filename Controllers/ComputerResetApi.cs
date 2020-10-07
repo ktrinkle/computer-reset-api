@@ -587,6 +587,7 @@ namespace ComputerResetApi.Controllers
                 };
 
                 _context.BanListText.Add(banText);
+                await _context.SaveChangesAsync();
                 return Ok("This user was added to the manual ban list.");
             } else {
                 //we have a response so update
