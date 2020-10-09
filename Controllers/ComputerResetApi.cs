@@ -286,25 +286,26 @@ namespace ComputerResetApi.Controllers
 
         [Authorize]
         [HttpGet("api/events/standby/list/{facebookId}")]
-        public IActionResult GetStandbyDateEvents(string facebookId)
+        public async Task<IActionResult> GetStandbyDateEvents(string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
                 return Unauthorized();
             } else {
-                var slotmaster = from timeslot in _context.Timeslot
+                var slotmaster = await (from timeslot in _context.Timeslot
                 where timeslot.EventStartTms >= DateTime.Now
                 orderby timeslot.EventStartTms
                 select new TimeslotStandby {
                     Id = timeslot.Id,
                     EventDate = timeslot.EventStartTms,
                     EventSlotCnt = timeslot.EventSlotCnt
-                }; 
+                }).ToListAsync(); 
 
-                var standbyListCombo = from eventsignup in _context.EventSignup
-                    join slot in slotmaster on eventsignup.TimeslotId equals slot.Id
+                var standbyListCombo = await(from eventsignup in _context.EventSignup
+                    join slot in _context.Timeslot on eventsignup.TimeslotId equals slot.Id
                     join users in _context.Users
                     on eventsignup.UserId equals users.Id
                     where users.BanFlag == false && eventsignup.AttendNbr >= slot.EventSlotCnt
+                    && slot.EventStartTms >= DateTime.Now
                     select new { 
                         eventsignup.Id,
                         users.FirstNm,
@@ -315,8 +316,8 @@ namespace ComputerResetApi.Controllers
                         users.BanFlag,
                         users.CityNm,
                         users.StateCd,
-                        slot.EventDate
-                    };
+                        slot.EventStartTms
+                    }).ToListAsync();
 
                 var rtnArray = new {
                     slot = slotmaster,
