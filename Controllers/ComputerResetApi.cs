@@ -518,6 +518,30 @@ namespace ComputerResetApi.Controllers
         }
 
 
+        [Authorize]
+        [HttpPut("api/events/private/{eventId}/{facebookId}")]
+        public async Task<ContentResult> PrivateEventChange(int eventId, string facebookId)
+        {
+            //swaps open and closed status of event
+
+            if (!CheckAdmin(facebookId)) {
+                return Content("You are not permitted to use this function.");
+            } 
+
+            Timeslot eventSlot = (from e in _context.Timeslot 
+            where e.Id == eventId
+            select e).SingleOrDefault();
+
+            if (eventSlot == null) {
+                return Content("Event ID not found");
+            } 
+            
+            eventSlot.PrivateEventInd = eventSlot.PrivateEventInd == true ? false : true;
+            await _context.SaveChangesAsync();
+
+            return Content("The status of event " + eventId.ToString() + " has changed.");
+        }
+        
         [Authorize]    
         [HttpPost("api/users/attrib")]
 
@@ -561,7 +585,6 @@ namespace ComputerResetApi.Controllers
             return existUser;
         }
 
-        //This is currently not saving to the DB
         [Authorize]
         [HttpPost("api/users/update/ban")]
         public async Task<ActionResult<string>> AdminUserId(BanListForm banList)
