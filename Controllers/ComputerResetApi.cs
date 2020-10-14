@@ -91,26 +91,30 @@ namespace ComputerResetApi.Controllers
                 return Unauthorized("You are not authorized to access this function.");
             }
 
-            if ((eventNew.EventEndTms <= eventNew.EventStartTms) || (eventNew.EventOpenTms >= eventNew.EventStartTms)) {
-                return Ok("The end date cannot be before the start date.");
+            if (eventNew.EventEndTms <= eventNew.EventStartTms) {
+                return BadRequest("The end date cannot be before the start date.");
+            }
+
+            if (eventNew.EventOpenTms >= eventNew.EventStartTms) {
+                return BadRequest("You cannot have an event open after it starts. Please try again.");
             }
 
             if ((eventNew.EventEndTms <= DateTime.Now) || (DateTime.Now >= eventNew.EventStartTms)) {
-                return Ok("You cannot create an event in the past.");
+                return BadRequest("You cannot create an event in the past.");
             }
 
             if ((eventNew.EventSlotCnt <= 0) || (eventNew.OverbookCnt < 0) || (eventNew.SignupCnt < 0)) {
-                return Ok("The booked, overbook or signup count cannot be less than zero.");
+                return BadRequest("The booked, overbook or signup count cannot be less than zero.");
             }
 
             if ((eventNew.EventSlotCnt >= eventNew.SignupCnt) || (eventNew.OverbookCnt > eventNew.SignupCnt) || eventNew.EventSlotCnt + eventNew.OverbookCnt > eventNew.SignupCnt) {
-                return Ok("Events are limited to no more than the maximum signup count.");
+                return BadRequest("Events are limited to no more than the maximum signup count.");
             }
 
             //do we have an event that already has this start date/time? if so, fail
             var existSession = _context.Timeslot.Where( a => a.EventStartTms == eventNew.EventStartTms).ToList();
             if (existSession.Count() > 0) {
-                return Ok("There is already an event with this start date and time.");
+                return BadRequest("There is already an event with this start date and time.");
             }
 
             //everything checks out, confirm that event exists and add or update
@@ -119,7 +123,7 @@ namespace ComputerResetApi.Controllers
 
             var oldSession = _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefault();
 
-            if (oldSession.Id == eventNew.Id) {
+            if (oldSession != null) {
                 oldSession.EventStartTms = eventNew.EventStartTms;
                 oldSession.EventEndTms = eventNew.EventEndTms;
                 oldSession.EventOpenTms = eventNew.EventOpenTms;
@@ -146,7 +150,7 @@ namespace ComputerResetApi.Controllers
             }
             await _context.SaveChangesAsync();
 
-            return Ok("The new event was successfully " + message);
+            return Ok("The event was successfully " + message);
         }
 
         // POST: api/events/signup
