@@ -300,7 +300,7 @@ namespace ComputerResetApi.Controllers
                 orderby timeslot.EventStartTms
                 select new TimeslotStandby {
                     Id = timeslot.Id,
-                    EventDate = timeslot.EventStartTms,
+                    EventDate = timeslot.EventStartTms.Date,
                     EventSlotCnt = timeslot.EventSlotCnt
                 }).ToListAsync(); 
 
@@ -310,6 +310,7 @@ namespace ComputerResetApi.Controllers
                     on eventsignup.UserId equals users.Id
                     where users.BanFlag == false && eventsignup.AttendNbr >= slot.EventSlotCnt
                     && slot.EventStartTms >= DateTime.Now
+                    orderby eventsignup.SignupTms
                     select new { 
                         eventsignup.Id,
                         users.FirstNm,
@@ -320,7 +321,8 @@ namespace ComputerResetApi.Controllers
                         users.BanFlag,
                         users.CityNm,
                         users.StateCd,
-                        slot.EventStartTms
+                        slot.EventStartTms,
+                        eventsignup.SignupTms
                     }).ToListAsync();
 
                 var rtnArray = new {
