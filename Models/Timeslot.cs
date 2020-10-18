@@ -26,6 +26,7 @@ namespace ComputerResetApi
         public string UserSlot { get; set; }
         public bool? EventClosed { get; set; }
         public string EventNote { get; set; }
+        public bool IntlEventInd { get; set; }
 
     }
 
