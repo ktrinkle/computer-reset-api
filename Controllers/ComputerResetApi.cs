@@ -39,7 +39,7 @@ namespace ComputerResetApi.Controllers
                 "case when ss.attend_nbr <= ts.event_slot_cnt then 'S' "+
                 "when ss.attend_nbr <= (ts.event_slot_cnt + ts.overbook_cnt) then 'C' "+
                 "when ss.timeslot_id is not null then 'L' else null end userslot, "+
-                "ts.event_closed EventClosed, ts.event_note EventNote "+
+                "ts.event_closed EventClosed, ts.event_note EventNote, ts.intl_event_ind IntlEventInd "+
                 "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr "+
                 "from event_signup es "+
                 "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
@@ -52,7 +52,8 @@ namespace ComputerResetApi.Controllers
             EventEndTms = a.EventEndTms,
             UserSlot = a.UserSlot,
             EventClosed = a.EventClosed,
-            EventNote = a.EventNote}).ToListAsync();
+            EventNote = a.EventNote},
+            IntlEventInd = a.IntlEventInd).ToListAsync();
         }
 
         [Authorize]
