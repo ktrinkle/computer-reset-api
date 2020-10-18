@@ -14,6 +14,7 @@ namespace ComputerResetApi
         public string SignupTxt { get; set; }
         public bool ConfirmInd { get; set; }
         public bool DeleteInd { get; set; }
+        public bool NoShowInd { get; set; }
 
         public virtual Timeslot Timeslot { get; set; }
         public virtual Users User { get; set; }

@@ -112,6 +112,10 @@ namespace ComputerResetApi.Models
                 entity.Property(e => e.PrivateEventInd)
                     .HasColumnName("private_event_ind");
 
+                entity.Property(e => e.IntlEventInd)
+                    .HasDefaultValueSql("false")
+                    .HasColumnName("intl_event_ind");
+
             });
 
             modelBuilder.Entity<UsCities>(entity =>
@@ -202,6 +206,9 @@ namespace ComputerResetApi.Models
                 entity.Property(e => e.VolunteerFlag)
                     .HasColumnName("volunteer_flag")
                     .HasDefaultValueSql("false");
+
+                entity.Property(e => e.NoShowCnt)
+                    .HasColumnName("no_show_cnt");
             });
 
             modelBuilder.Entity<BanListText>(entity =>

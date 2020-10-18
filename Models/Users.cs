@@ -16,6 +16,8 @@ namespace ComputerResetApi
         public bool? AdminFlag { get; set; }
         public bool? VolunteerFlag { get; set; }
         public int? EventCnt { get; set; }
+
+        public int? NoShowCnt { get; set; }
     }
 
     public partial class UserSmall
