@@ -54,6 +54,8 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.DeleteInd).HasColumnName("delete_ind");
 
+                entity.Property(e => e.NoShowInd).HasColumnName("noshow_ind");
+
                 entity.HasOne(d => d.Timeslot)
                     .WithMany()
                     .HasForeignKey(d => d.TimeslotId)
