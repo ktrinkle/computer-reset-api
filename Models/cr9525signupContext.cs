@@ -208,7 +208,7 @@ namespace ComputerResetApi.Models
                     .HasDefaultValueSql("false");
 
                 entity.Property(e => e.NoShowCnt)
-                    .HasColumnName("no_show_cnt");
+                    .HasColumnName("noshow_cnt");
             });
 
             modelBuilder.Entity<BanListText>(entity =>
