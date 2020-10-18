@@ -247,7 +247,8 @@ namespace ComputerResetApi.Controllers
                     users.BanFlag,
                     users.CityNm,
                     users.StateCd,
-                    eventsignup.ConfirmInd
+                    eventsignup.ConfirmInd,
+                    eventsignup.NoShowInd
                 };
 
                 return Ok(members);
@@ -285,7 +286,7 @@ namespace ComputerResetApi.Controllers
                     users.BanFlag,
                     eventsignup.SignupTxt,
                     eventsignup.ConfirmInd,
-                    eventsignup.NoShowInd
+                    users.NoShowCnt
                 };
 
                 return Ok(members);
