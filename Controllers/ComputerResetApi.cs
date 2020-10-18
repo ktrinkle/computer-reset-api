@@ -508,7 +508,7 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/attended/{id}/{facebookId}")]
+        [HttpPut("api/events/noshow/{id}/{facebookId}")]
         [SwaggerOperation(Summary = "Mark user as no-show", 
             Description = "This marks a user who did not show up at an event and adjusts the no-show count accordingly.")]
         public async Task<ActionResult<string>> MarkUserNoShow(int id, string facebookId)
