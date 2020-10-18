@@ -15,6 +15,7 @@ namespace ComputerResetApi
         public int? SignupCnt { get; set; }
         public string EventNote { get; set; }
         public bool PrivateEventInd { get; set; }
+        public bool IntlEventInd { get; set; }
     }
 
      public partial class TimeslotLimited
@@ -41,6 +42,8 @@ namespace ComputerResetApi
         public string facebookId { get; set; }
         public string EventNote { get; set; }
         public bool PrivateEventInd { get; set; }
+
+        public bool IntlEventInd { get; set; }
     }
 
     public partial class TimeslotStandby

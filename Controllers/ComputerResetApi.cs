@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using ComputerResetApi.Models;
 using System;
+using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
@@ -132,6 +133,7 @@ namespace ComputerResetApi.Controllers
                 oldSession.OverbookCnt = eventNew.OverbookCnt;
                 oldSession.EventNote = eventNew.EventNote;
                 oldSession.PrivateEventInd = eventNew.PrivateEventInd;
+                oldSession.IntlEventInd = eventNew.IntlEventInd;
                 message = "updated.";
             } else {
                 var newSession = new Timeslot(){
@@ -143,7 +145,8 @@ namespace ComputerResetApi.Controllers
                     OverbookCnt = eventNew.OverbookCnt,
                     SignupCnt = eventNew.SignupCnt,
                     EventNote = eventNew.EventNote,
-                    PrivateEventInd = eventNew.PrivateEventInd
+                    PrivateEventInd = eventNew.PrivateEventInd,
+                    IntlEventInd = eventNew.IntlEventInd
                 };
                 await _context.Timeslot.AddAsync(newSession);
                 message = "added.";
@@ -280,7 +283,8 @@ namespace ComputerResetApi.Controllers
                     users.EventCnt,
                     users.BanFlag,
                     eventsignup.SignupTxt,
-                    eventsignup.ConfirmInd
+                    eventsignup.ConfirmInd,
+                    users.NoShowCnt
                 };
 
                 return Ok(members);
@@ -322,7 +326,8 @@ namespace ComputerResetApi.Controllers
                         users.CityNm,
                         users.StateCd,
                         slot.EventStartTms,
-                        eventsignup.SignupTms
+                        eventsignup.SignupTms,
+                        users.NoShowCnt
                     }).ToListAsync();
 
                 var rtnArray = new {
@@ -363,7 +368,8 @@ namespace ComputerResetApi.Controllers
                     eventsignup.AttendInd,
                     users.BanFlag,
                     users.CityNm,
-                    users.StateCd
+                    users.StateCd,
+                    users.NoShowCnt
                 };
 
                 return Ok(members);
@@ -457,6 +463,8 @@ namespace ComputerResetApi.Controllers
         
         [Authorize]
         [HttpPut("api/events/attended/{id}/{facebookId}")]
+        [SwaggerOperation(Summary = "Mark user as attended", 
+            Description = "This marks a user as attending an event and adjusts the event count accordingly.")]
         public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
         {
             //marks a user as attended an event, and updates user table with new count
@@ -498,6 +506,54 @@ namespace ComputerResetApi.Controllers
             return Ok("The user was marked as attending this event.");
         }
 
+        [Authorize]
+        [HttpPut("api/events/attended/{id}/{facebookId}")]
+        [SwaggerOperation(Summary = "Mark user as no-show", 
+            Description = "This marks a user who did not show up at an event and adjusts the no-show count accordingly.")]
+        public async Task<ActionResult<string>> MarkUserNoShow(int id, string facebookId)
+        {
+            //marks a user as attended an event, and updates user table with new count
+            int eventNoShowInd;
+
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized();
+            } 
+            
+            EventSignup eventUser = (from e in _context.EventSignup 
+            where e.Id == id && e.AttendNbr != null
+            select e).SingleOrDefault();
+
+            if (eventUser == null) {
+                return NotFound("Event timeslot ID not found");
+            } 
+            
+            if (eventUser.NoShowInd == false) {
+                eventUser.NoShowInd = true;
+                eventNoShowInd = 1;
+            } else {
+                eventUser.NoShowInd = false;
+                eventNoShowInd = -1;               
+            }
+            await _context.SaveChangesAsync();
+
+            Users existUser = (from u in _context.Users 
+            where u.Id == eventUser.UserId
+            select u).SingleOrDefault();
+
+            if (existUser == null) {
+                return NotFound("User ID not found");
+            } 
+            
+            //increment or decrement event attend count. If <= 0, set to 0.
+            if (existUser.NoShowCnt == null ) {
+                existUser.NoShowCnt = 1;
+            } else {
+                existUser.NoShowCnt = (existUser.NoShowCnt + eventNoShowInd) <= 0 ? null : (existUser.NoShowCnt + eventNoShowInd);
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok("The user was marked as a no-show for this event.");
+        }
 
         [Authorize]
         [HttpPut("api/events/close/{eventId}/{facebookId}")]
