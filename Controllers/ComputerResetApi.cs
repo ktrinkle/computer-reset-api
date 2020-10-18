@@ -52,8 +52,8 @@ namespace ComputerResetApi.Controllers
             EventEndTms = a.EventEndTms,
             UserSlot = a.UserSlot,
             EventClosed = a.EventClosed,
-            EventNote = a.EventNote},
-            IntlEventInd = a.IntlEventInd).ToListAsync();
+            EventNote = a.EventNote,
+            IntlEventInd = a.IntlEventInd}).ToListAsync();
         }
 
         [Authorize]
