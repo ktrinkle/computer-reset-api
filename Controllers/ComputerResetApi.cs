@@ -306,7 +306,7 @@ namespace ComputerResetApi.Controllers
                 orderby timeslot.EventStartTms
                 select new TimeslotStandby {
                     Id = timeslot.Id,
-                    EventDate = timeslot.EventStartTms.Date,
+                    EventDate = timeslot.EventStartTms,
                     EventSlotCnt = timeslot.EventSlotCnt
                 }).ToListAsync(); 
 
