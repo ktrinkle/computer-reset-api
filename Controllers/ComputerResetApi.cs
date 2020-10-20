@@ -314,22 +314,25 @@ namespace ComputerResetApi.Controllers
                     join slot in _context.Timeslot on eventsignup.TimeslotId equals slot.Id
                     join users in _context.Users
                     on eventsignup.UserId equals users.Id
-                    where users.BanFlag == false && eventsignup.AttendNbr >= slot.EventSlotCnt
+                    join citylist in _context.UsCities
+                    on new {users.CityNm, users.StateCd} equals new {CityNm = citylist.City, citylist.StateCd}
+                    where users.BanFlag == false && eventsignup.AttendNbr == null
                     && slot.EventStartTms >= DateTime.Now
-                    orderby eventsignup.SignupTms
+                    orderby citylist.MetroplexInd descending, users.EventCnt, eventsignup.SignupTms
                     select new { 
                         eventsignup.Id,
                         users.FirstNm,
                         users.LastNm,
                         users.RealNm,
-                        eventsignup.TimeslotId,
-                        eventsignup.AttendInd,
-                        users.BanFlag,
                         users.CityNm,
                         users.StateCd,
+                        citylist.MetroplexInd,
+                        eventsignup.TimeslotId,
                         slot.EventStartTms,
                         eventsignup.SignupTms,
-                        users.NoShowCnt
+                        users.NoShowCnt,
+                        users.EventCnt,
+                        eventsignup.SignupTxt
                     }).ToListAsync();
 
                 var rtnArray = new {
