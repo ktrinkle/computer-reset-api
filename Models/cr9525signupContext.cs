@@ -137,6 +137,9 @@ namespace ComputerResetApi.Models
                     .HasColumnName("state_cd")
                     .HasMaxLength(3);
 
+                entity.Property(e => e.MetroplexInd)
+                    .HasColumnName("metroplex_ind");
+
                 entity.HasOne(d => d.IdStateNavigation)
                     .WithMany(p => p.UsCities)
                     .HasForeignKey(d => d.IdState)

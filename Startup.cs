@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,15 +9,6 @@ using Microsoft.OpenApi.Models;
 using ComputerResetApi.Models;
 using ComputerResetApi.Helpers;
 using ComputerResetApi.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.Identity.Web;
-using Swashbuckle.AspNetCore;
-using System.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Rewrite;
 
 namespace ComputerResetApi
 {
@@ -88,6 +78,14 @@ namespace ComputerResetApi
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
+
+            //add UTC handling for dates in JSON
+            //source: https://stackoverflow.com/questions/58102189/formatting-datetime-in-asp-net-core-3-0-using-system-text-json
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

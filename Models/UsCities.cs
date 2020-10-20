@@ -9,6 +9,7 @@ namespace ComputerResetApi
         public int IdState { get; set; }
         public string City { get; set; }
         public string StateCd { get; set; }
+        public bool MetroplexInd { get; set; }
 
         public virtual UsStates IdStateNavigation { get; set; }
     }
