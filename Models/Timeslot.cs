@@ -50,8 +50,8 @@ namespace ComputerResetApi
     {
         public int Id { get; set; }
         public DateTime EventDate { get; set; }
-        public DateTime EventTime { get; set; }
         public int EventSlotCnt { get; set; }
+        public int AvailSlot { get; set; }
     }
 
 }
