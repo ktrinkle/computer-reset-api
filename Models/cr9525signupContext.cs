@@ -1,18 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 
 namespace ComputerResetApi.Models
 {
     public partial class cr9525signupContext : DbContext
     {
-        
-        public cr9525signupContext()
+        private readonly ILogger _logger;
+        public static readonly ILoggerFactory CrLoggerFactory = 
+            LoggerFactory.Create(builder => { builder.AddConsole(); });
+
+        public cr9525signupContext(ILogger<cr9525signupContext> logger)
         {
+            _logger = logger;
         }
 
-        public cr9525signupContext(DbContextOptions<cr9525signupContext> options)
+        public cr9525signupContext(DbContextOptions<cr9525signupContext> options, ILogger<cr9525signupContext> logger)
             : base(options)
         {
+             _logger = logger;
         }
 
         public virtual DbSet<EventSignup> EventSignup { get; set; }
@@ -27,7 +33,7 @@ namespace ComputerResetApi.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-
+            //optionsBuilder.UseLoggerFactory(CrLoggerFactory);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
