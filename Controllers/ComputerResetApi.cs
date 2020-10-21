@@ -36,12 +36,13 @@ namespace ComputerResetApi.Controllers
         {
             return await _context.TimeslotLimited.FromSqlRaw(
                 "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms, "+
-                "case when ss.attend_nbr <= ts.event_slot_cnt then 'S' "+
+                "case when ss.attend_nbr <= ts.event_slot_cnt and ss.confirm_ind then 'G' "+
+                "when ss.attend_nbr <= ts.event_slot_cnt then 'S' " +
                 "when ss.attend_nbr <= (ts.event_slot_cnt + ts.overbook_cnt) then 'C' "+
                 "when ss.timeslot_id is not null then 'L' else null end userslot, "+
                 "ts.event_closed EventClosed, ts.event_note EventNote, ts.intl_event_ind IntlEventInd "+
-                "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr "+
-                "from event_signup es "+
+                "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr, "+
+                "es.confirm_ind from event_signup es "+
                 "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
                 "on ts.id = ss.timeslot_id "+
                 "where current_timestamp >= ts.event_open_tms "+
@@ -301,14 +302,18 @@ namespace ComputerResetApi.Controllers
             if (!CheckAdmin(facebookId)) {
                 return Unauthorized();
             } else {
-                var slotmaster = await (from timeslot in _context.Timeslot
-                where timeslot.EventStartTms >= DateTime.Now
-                orderby timeslot.EventStartTms
-                select new TimeslotStandby {
-                    Id = timeslot.Id,
-                    EventDate = timeslot.EventStartTms,
-                    EventSlotCnt = timeslot.EventSlotCnt
-                }).ToListAsync(); 
+                var slotmaster = await (_context.Timeslot.FromSqlRaw(
+                    "select ts.id Id, ts.event_start_tms EventStartTms, ts.event_slot_cnt EventSlotCnt, " +
+                    "count(es.attend_nbr) SignupCnt from timeslot ts inner join event_signup es " +
+                    "on ts.id = es.timeslot_id and es.attend_nbr <= ts.event_slot_cnt " +
+                    "group by ts.id, ts.event_start_tms, ts.event_slot_cnt " +
+                    "where ts.event_start_tms >= now() order by ts.event_start_tms;" 
+                ).Select(a => new TimeslotStandby() {
+                    Id = a.Id,
+                    EventDate = a.EventStartTms,
+                    EventSlotCnt = a.EventSlotCnt,
+                    AvailSlot = a.EventSlotCnt - a.SignupCnt ?? 0
+                })).ToListAsync(); 
 
                 var standbyListCombo = await(from eventsignup in _context.EventSignup
                     join slot in _context.Timeslot on eventsignup.TimeslotId equals slot.Id
