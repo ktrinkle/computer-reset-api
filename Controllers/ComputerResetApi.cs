@@ -306,8 +306,8 @@ namespace ComputerResetApi.Controllers
                     "select ts.id Id, ts.event_start_tms EventStartTms, ts.event_slot_cnt EventSlotCnt, " +
                     "count(es.attend_nbr) SignupCnt from timeslot ts inner join event_signup es " +
                     "on ts.id = es.timeslot_id and es.attend_nbr <= ts.event_slot_cnt " +
-                    "group by ts.id, ts.event_start_tms, ts.event_slot_cnt " +
-                    "where ts.event_start_tms >= now() order by ts.event_start_tms;" 
+                    "where ts.event_start_tms >= now() group by ts.id, ts.event_start_tms, ts.event_slot_cnt " +
+                    "order by ts.event_start_tms;" 
                 ).Select(a => new TimeslotStandby() {
                     Id = a.Id,
                     EventDate = a.EventStartTms,
