@@ -230,7 +230,7 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/{eventId}/{facebookId}")]
+        [HttpGet("api/events/signedup/dayof/{eventId}/{facebookId}")]
         public IActionResult GetSignupConfirm(int eventId, string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
