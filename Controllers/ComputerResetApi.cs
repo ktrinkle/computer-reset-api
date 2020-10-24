@@ -195,6 +195,11 @@ namespace ComputerResetApi.Controllers
             int currCount = _context.EventSignup.Count(m => m.TimeslotId == signup.eventId);
             var eventStats = _context.Timeslot.Where(a => a.Id == signup.eventId)
                 .FirstOrDefault();
+
+            if (eventStats.EventClosed == true) {
+                return Content("I am sorry, this event is full.");
+            }
+
             if (currCount >= eventStats.SignupCnt) {
                 //auto-close functionality
                 eventStats.EventClosed = true;
@@ -260,8 +265,8 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/{eventId}/{maxEventsAttended}/{facebookId}")]
-        public IActionResult GetSignedUpMembers(int eventId, int maxEventsAttended, string facebookId)
+        [HttpGet("api/events/signedup/{eventId}/{facebookId}")]
+        public IActionResult GetSignedUpMembers(int eventId, string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
                 return Unauthorized();
@@ -269,7 +274,7 @@ namespace ComputerResetApi.Controllers
                 var members =  from eventsignup in _context.EventSignup
                 join users in _context.Users
                 on eventsignup.UserId equals users.Id
-                where users.BanFlag == false && users.EventCnt <= maxEventsAttended 
+                where users.BanFlag == false
                 && eventsignup.TimeslotId == eventId && eventsignup.DeleteInd == false
                 orderby users.EventCnt, eventsignup.SignupTms
                 select new {
@@ -346,43 +351,6 @@ namespace ComputerResetApi.Controllers
                 };
 
                 return Ok(rtnArray);
-            }
-
-        }
-       
-        // GET: api/events/standby
-        //returns all folks signed up, excluding bans and those who have attended before
-        [Authorize]
-        [HttpGet("api/events/standby/{eventDate}/{facebookId}")]
-        public IActionResult GetStandby(DateTime eventDate, string facebookId)
-        {
-            if (!CheckAdmin(facebookId)) {
-                return Unauthorized();
-            } else {
-                var members =  from eventsignup in _context.EventSignup
-                join users in _context.Users
-                on eventsignup.UserId equals users.Id
-                join timeslot in _context.Timeslot
-                on eventsignup.TimeslotId equals timeslot.Id
-                where users.BanFlag == false && eventsignup.AttendNbr >= timeslot.SignupCnt
-                && timeslot.EventStartTms >= eventDate.Date
-                && timeslot.EventStartTms < eventDate.Date.AddDays(1)
-                && eventsignup.DeleteInd == false
-                orderby eventsignup.SignupTms
-                select new {
-                    eventsignup.Id,
-                    users.FirstNm,
-                    users.LastNm,
-                    users.RealNm,
-                    eventsignup.TimeslotId,
-                    eventsignup.AttendInd,
-                    users.BanFlag,
-                    users.CityNm,
-                    users.StateCd,
-                    users.NoShowCnt
-                };
-
-                return Ok(members);
             }
 
         }
@@ -836,6 +804,8 @@ namespace ComputerResetApi.Controllers
             //removal functionality
             
             eventUser.TimeslotId = newEventId;
+
+            //get slot number from raw sql query - to code
             await _context.SaveChangesAsync();
 
             return Ok("This user has been moved to the event.");
