@@ -784,9 +784,13 @@ namespace ComputerResetApi.Controllers
 
         [Authorize]
         [HttpPut("api/events/move/{slotId}/{newEventId}/{facebookId}")]
+        [SwaggerOperation(Summary = "Assign a standby to an event", 
+            Description = "This will move a user to a different event and assign a slot. Designed for easy standby processing.")]
         public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId, string facebookId)
         {
             //marks a user as getting a slot in an event
+
+            var returnMsg = "";
 
             if (!CheckAdmin(facebookId)) {
                 return Unauthorized();
@@ -801,14 +805,34 @@ namespace ComputerResetApi.Controllers
             } 
 
             //move from old to new
-            //removal functionality
             
             eventUser.TimeslotId = newEventId;
 
             //get slot number from raw sql query - to code
+                var newSlotNbr = await (_context.EventSignup.FromSqlRaw(
+                    "select min(generate_series) attend_nbr from ( " +
+                    "select ats.timeslot_id, es.attend_nbr, ats.generate_series " +
+                    "from event_signup es right outer join " +
+                    "(select generate_series(1, event_slot_cnt), id timeslot_id from timeslot) ats " +
+                    "on es.timeslot_id = ats.timeslot_id " +
+                    "and es.attend_nbr = ats.generate_series " +
+                    "where es.attend_nbr is null " +
+                    "and ats.timeslot_id = {0}) ts2; ", newEventId
+                ).Select(a => new {
+                    AttendNbr = a.AttendNbr
+                })).FirstOrDefaultAsync(); 
+
+            //only set if we get a value back
+            if (newSlotNbr.AttendNbr != null) {
+                eventUser.AttendNbr = newSlotNbr.AttendNbr;
+                returnMsg = "The attendee has been moved to the new event with slot #" + newSlotNbr.AttendNbr.ToString();
+            } else {
+                returnMsg = "The attendee was moved to the new event, but no slot was available.";
+            }
+
             await _context.SaveChangesAsync();
 
-            return Ok("This user has been moved to the event.");
+            return Ok(returnMsg);
         }
 
         [Authorize]
