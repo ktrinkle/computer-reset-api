@@ -166,8 +166,8 @@ namespace ComputerResetApi.Controllers
         {
             int ourUserId;
 
-            //Kisha rule
-            if (signup.realname.ToLower() == "keyboard kid") {
+            //Keyboard kid rule
+            if (signup.realname.ToLower().IndexOf("lewellen") >= 0) {
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
@@ -224,7 +224,7 @@ namespace ComputerResetApi.Controllers
             existUser.RealNm = signup.realname;
             await _context.SaveChangesAsync();
 
-            return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages for confirmation from the volunteers.");
+            return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages and message requests for confirmation from the volunteers.");
         }
 
         // GET: api/events/signedup
@@ -310,7 +310,7 @@ namespace ComputerResetApi.Controllers
                 var slotmaster = await (_context.Timeslot.FromSqlRaw(
                     "select ts.id, ts.event_start_tms, ts.event_slot_cnt, " +
                     "count(es.attend_nbr) signup_cnt from timeslot ts inner join event_signup es " +
-                    "on ts.id = es.timeslot_id and es.attend_nbr <= ts.event_slot_cnt " +
+                    "on ts.id = es.timeslot_id and (es.attend_nbr <= ts.event_slot_cnt or es.attend_nbr is null) " +
                     "where ts.event_start_tms >= now() group by ts.id, ts.event_start_tms, ts.event_slot_cnt " +
                     "order by ts.event_start_tms" 
                 ).Select(a => new TimeslotStandby() {
@@ -817,7 +817,7 @@ namespace ComputerResetApi.Controllers
                     "on es.timeslot_id = ats.timeslot_id " +
                     "and es.attend_nbr = ats.generate_series " +
                     "where es.attend_nbr is null " +
-                    "and ats.timeslot_id = {0}) ts2; ", newEventId
+                    "and ats.timeslot_id = {0}) ts2", newEventId
                 ).Select(a => new {
                     AttendNbr = a.AttendNbr
                 })).FirstOrDefaultAsync(); 
