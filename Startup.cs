@@ -38,6 +38,7 @@ namespace ComputerResetApi
             {
                 c.EnableAnnotations();
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Computer Reset API", Version = "v1" });
+                //future c.TagActionsBy();
         
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
