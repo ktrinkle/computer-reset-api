@@ -38,6 +38,10 @@ namespace ComputerResetApi.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasSequence<int>("user_manual_seq")
+                .StartsAt(1006)
+                .IncrementsBy(1);
+            
             modelBuilder.Entity<EventSignup>(entity =>
             {
                 entity.ToTable("event_signup");

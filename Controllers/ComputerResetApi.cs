@@ -612,7 +612,16 @@ namespace ComputerResetApi.Controllers
                 await _context.SaveChangesAsync();
                 
                 existUserTest = _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefault();
-            } 
+            } else {
+                //update FB name if needed
+                if (existUserTest.FirstNm != fbInfo.firstName || existUserTest.LastNm != fbInfo.lastName) {
+                    existUserTest.FirstNm = fbInfo.firstName;
+                    existUserTest.LastNm = fbInfo.lastName;
+                    
+                    _context.Users.Update(existUserTest);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             UserAttrib existUser = new UserAttrib();
             
@@ -625,11 +634,99 @@ namespace ComputerResetApi.Controllers
             return existUser;
         }
 
+        [Authorize]    
+        [HttpPost("api/users/manual")]
+        [SwaggerOperation(Summary = "Manually create a user", 
+            Description = "This allows an admin to add a user outside of Facebook or edit user info.")]
+        public async Task<ActionResult<Users>> CreateManualUser(UserManual fbInfo)
+        {
+            //gets status flag of user and creates user record if not existing
+
+            //do we have user with this id - ours?
+            //test if user exists in table. if not, create.
+            if (!CheckAdmin(fbInfo.facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+            
+            var existUserTest = await _context.Users.Where( a => 
+                a.Id == fbInfo.Id && fbInfo.Id != 0).FirstOrDefaultAsync();
+  
+            if (existUserTest == null) {
+                var newUserSeq = await _context.Users.FromSqlRaw(
+                    "select cast(nextVal('user_manual_seq') as varchar(50)) fb_id"
+                    ).Select(a => new {
+                    FbId = a.FbId}).FirstOrDefaultAsync();
+
+                fbInfo.FbId = newUserSeq.FbId.ToString();
+
+                var newUser = new Users(){
+                    FbId = newUserSeq.FbId,
+                    FirstNm = fbInfo.FirstNm,
+                    LastNm = fbInfo.LastNm,
+                    RealNm = fbInfo.RealNm,
+                    CityNm = fbInfo.CityNm,
+                    StateCd = fbInfo.StateCd,
+                    EventCnt = 0
+                };
+
+                await _context.Users.AddAsync(newUser);
+                await _context.SaveChangesAsync();
+                
+            } else {
+                //update what we can
+                existUserTest.RealNm = fbInfo.RealNm;
+                existUserTest.CityNm = existUserTest.CityNm;
+                existUserTest.StateCd = existUserTest.StateCd;  
+
+                _context.Users.Update(existUserTest);  
+                await _context.SaveChangesAsync();
+            }
+
+            existUserTest = _context.Users.Where( a => a.FbId == fbInfo.FbId).FirstOrDefault();
+
+            return existUserTest;
+        }
+
+        [Authorize]    
+        [HttpGet("api/users/lookup/{nameVal}/{facebookId}")]
+        [SwaggerOperation(Summary = "Lookup a user", 
+            Description = "Looks up a user by name element.")]
+        public async Task<ActionResult<UserManual>> LookupUser(string nameVal, string facebookId)
+        {
+            //gets status flag of user and creates user record if not existing
+
+            //do we have user with this id - ours?
+            //test if user exists in table. if not, create.
+            if (!CheckAdmin(facebookId)) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+            
+            var userLookup = await _context.Users.Where( a => 
+                a.FirstNm.ToLower().Contains(nameVal.ToLower()) 
+                || a.LastNm.ToLower().Contains(nameVal.ToLower())
+                || a.RealNm.ToLower().Contains(nameVal.ToLower()))
+                .Select(a => new UserManual() {
+                    Id = a.Id,
+                    FirstNm = a.FirstNm,
+                    LastNm = a.LastNm,
+                    CityNm = a.CityNm,
+                    StateCd = a.StateCd,
+                    RealNm = a.RealNm,
+                    FbId = a.FbId,
+                    BanFlag = a.BanFlag,
+                    AdminFlag = a.AdminFlag,
+                    VolunteerFlag = a.VolunteerFlag,
+                    facebookId = null
+                }).ToListAsync();
+
+            return Ok(userLookup);
+        }
+
         [Authorize]
         [HttpPost("api/users/update/ban")]
         public async Task<ActionResult<string>> AdminUserId(BanListForm banList)
         {
-            //sets admin flag of user
+            //manually edits the ban user text list
 
             if (!CheckAdmin(banList.facebookId)) {
                 return Unauthorized("You are not permitted to use this function.");
