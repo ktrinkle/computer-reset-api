@@ -70,14 +70,13 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/show/past/{facebookId}")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowPastSession(string facebookId)
+        [HttpGet("api/events/show/all/{facebookId}")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowAllSession(string facebookId)
         {
             if (!CheckAdmin(facebookId)) {
                 return null;
             } else {
-                return await _context.Timeslot.Where(a => a.EventStartTms < DateTime.Now 
-                ).OrderBy(a => a.EventStartTms).ToListAsync();
+                return await _context.Timeslot.OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }
   
