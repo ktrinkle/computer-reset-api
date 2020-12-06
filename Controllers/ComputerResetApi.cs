@@ -32,6 +32,8 @@ namespace ComputerResetApi.Controllers
         
         [Authorize]
         [HttpGet("api/events/show/open/{facebookId}")]
+        [SwaggerOperation(Summary = "Show events and user status", 
+        Description = "Shows user signup status for open events. G = confirmed, S = signed up, C = waitlist, L = on the list")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
         {
             return await _context.TimeslotLimited.FromSqlRaw(
@@ -55,6 +57,56 @@ namespace ComputerResetApi.Controllers
             EventClosed = a.EventClosed,
             EventNote = a.EventNote,
             IntlEventInd = a.IntlEventInd}).ToListAsync();
+        }
+
+        [Authorize]
+        [HttpGet("api/signup/slot/{facebookId}")]
+        [SwaggerOperation(Summary = "Get current signup timeslot from open events", 
+        Description = "Get the open timeslot the user signed up for. Only returns one timeslot." + 
+        "Does not return a value once an attendee number is assigned or events are closed.")]
+        public async Task<ActionResult<string>> GetSignupSlot(string facebookId)
+        {
+            var timeslotId = await (from eventsignup in _context.EventSignup
+                join users in _context.Users
+                on eventsignup.UserId equals users.Id
+                join timeslot in _context.Timeslot
+                on eventsignup.TimeslotId equals timeslot.Id
+                where users.FbId == facebookId
+                && !eventsignup.DeleteInd
+                && eventsignup.AttendNbr == null
+                && timeslot.EventStartTms >= DateTime.Now
+                && timeslot.EventOpenTms <= DateTime.Now
+                orderby eventsignup.SignupTms
+                select new {
+                    eventsignup.Id
+                }).FirstOrDefaultAsync();
+
+                return Ok(timeslotId);
+        }
+
+        [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
+        [SwaggerOperation(Summary = "Moves a user to another event", 
+            Description = "This will move a user to a different event. Requires user to match the timeslot owner.")]
+        public async Task<ActionResult<string>> UserMoveSignup(int slotId, int newEventId, string facebookId)
+        {
+            //moves a user to another event - user
+
+            EventSignup eventUser = (from e in _context.EventSignup 
+            join u in _context.Users
+            on e.UserId equals u.Id
+            where e.Id == slotId
+            && u.FbId == facebookId
+            select e).SingleOrDefault();
+
+            if (eventUser == null) {
+                return NotFound("User signup ID not found");
+            } 
+
+            //move from old to new
+            
+            eventUser.TimeslotId = newEventId;
+            await _context.SaveChangesAsync();
+            return Ok("You have been moved to the selected timeslot.");
         }
 
         [Authorize]
@@ -884,7 +936,7 @@ namespace ComputerResetApi.Controllers
             Description = "This will move a user to a different event and assign a slot. Designed for easy standby processing.")]
         public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId, string facebookId)
         {
-            //marks a user as getting a slot in an event
+            //moves a user to another event - admin
 
             var returnMsg = "";
 
