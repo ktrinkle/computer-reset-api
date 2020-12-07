@@ -10,6 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
+using Npgsql.NodaTime;
 
 namespace ComputerResetApi.Controllers
 {
@@ -63,7 +64,8 @@ namespace ComputerResetApi.Controllers
         [HttpGet("api/signup/slot/{facebookId}")]
         [SwaggerOperation(Summary = "Get current signup timeslot from open events", 
         Description = "Get the open timeslot the user signed up for. Only returns one timeslot." + 
-        "Does not return a value once an attendee number is assigned or events are closed.")]
+        " Does not return a value once an attendee number is assigned or events are closed." +
+        " Limited to users that have attended only 0 or 1 times.")]
         public async Task<ActionResult<string>> GetSignupSlot(string facebookId)
         {
             var timeslotId = await (from eventsignup in _context.EventSignup
@@ -72,6 +74,7 @@ namespace ComputerResetApi.Controllers
                 join timeslot in _context.Timeslot
                 on eventsignup.TimeslotId equals timeslot.Id
                 where users.FbId == facebookId
+                && users.EventCnt < 2
                 && !eventsignup.DeleteInd
                 && eventsignup.AttendNbr == null
                 && timeslot.EventStartTms >= DateTime.Now
@@ -86,7 +89,8 @@ namespace ComputerResetApi.Controllers
 
         [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
         [SwaggerOperation(Summary = "Moves a user to another event", 
-            Description = "This will move a user to a different event. Requires user to match the timeslot owner.")]
+            Description = "This will move a user to a different event. Requires user to match the timeslot owner." 
+            + " Limited by business rule to allowing moves for less than 2 attended events.")]
         public async Task<ActionResult<string>> UserMoveSignup(int slotId, int newEventId, string facebookId)
         {
             //moves a user to another event - user
@@ -95,18 +99,19 @@ namespace ComputerResetApi.Controllers
             join u in _context.Users
             on e.UserId equals u.Id
             where e.Id == slotId
+            && u.EventCnt < 2
             && u.FbId == facebookId
             select e).SingleOrDefault();
 
             if (eventUser == null) {
-                return NotFound("User signup ID not found");
+                return NotFound("I'm sorry, you are not permitted to move events.");
             } 
 
             //move from old to new
             
             eventUser.TimeslotId = newEventId;
             await _context.SaveChangesAsync();
-            return Ok("You have been moved to the selected timeslot.");
+            return Ok("You have been moved to the selected event.");
         }
 
         [Authorize]
