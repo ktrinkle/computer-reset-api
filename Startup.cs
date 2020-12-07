@@ -74,7 +74,7 @@ namespace ComputerResetApi
 
             services.AddDbContext<cr9525signupContext>(options => options.UseNpgsql(postgresConn));
             
-            NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
+            //NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
        
             // configure strongly typed settings object
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
