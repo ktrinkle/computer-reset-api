@@ -60,7 +60,7 @@ namespace ComputerResetApi.Controllers
             IntlEventInd = a.IntlEventInd}).ToListAsync();
         }
 
-        [Authorize]
+        /*[Authorize]
         [HttpGet("api/signup/slot/{facebookId}")]
         [SwaggerOperation(Summary = "Get current signup timeslot from open events", 
         Description = "Get the open timeslot the user signed up for. Only returns one timeslot." + 
@@ -85,7 +85,7 @@ namespace ComputerResetApi.Controllers
                 }).FirstOrDefaultAsync();
 
                 return Ok(timeslotId);
-        }
+        }*/
 
         [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
         [SwaggerOperation(Summary = "Moves a user to another event", 
@@ -241,9 +241,19 @@ namespace ComputerResetApi.Controllers
                 ourUserId = existUser.Id;
             }
 
-            var existUserEvent = _context.EventSignup.Where(a => a.UserId == ourUserId && a.TimeslotId == signup.eventId).FirstOrDefault();
-            if (existUserEvent != null) {
-                return Content("It looks like you have already signed up for this event.");
+            var existUserEvent = (from e in _context.EventSignup
+                                 join t in _context.Timeslot
+                                 on e.TimeslotId equals t.Id
+                                 where e.UserId == ourUserId
+                                 && t.EventOpenTms <= DateTime.Now
+                                 && t.EventStartTms > DateTime.Now
+                                 select new {e.Id}).Count();
+
+            //var existUserEvent = _context.EventSignup.Where(a => a.UserId == ourUserId 
+            //&& a.TimeslotId == signup.eventId).FirstOrDefault();
+            if (existUserEvent > 0) {
+                return Content("It looks like you have already signed up for an open event. " +
+                "You may only sign up for one event per weekend.");
             }
 
             //check for event count - new per Raymond. Will run as final verification.
