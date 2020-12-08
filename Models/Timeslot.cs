@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ComputerResetApi
 {
@@ -20,12 +21,19 @@ namespace ComputerResetApi
 
      public partial class TimeslotLimited
     {
+        [Column("id")]
         public int Id { get; set; }
+        [Column("eventstarttms")]
         public DateTime EventStartTms { get; set; }
+        [Column("eventendtms")]
         public DateTime EventEndTms { get; set; }
+        [Column("userslot")]
         public string UserSlot { get; set; }
+        [Column("eventclosed")]
         public bool? EventClosed { get; set; }
+        [Column("eventnote")]
         public string EventNote { get; set; }
+        [Column("intleventind")]
         public bool? IntlEventInd { get; set; }
 
     }
