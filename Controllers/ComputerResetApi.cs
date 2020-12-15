@@ -33,10 +33,12 @@ namespace ComputerResetApi.Controllers
         
         [Authorize]
         [HttpGet("api/events/show/open/{facebookId}")]
+        [Obsolete]
         [SwaggerOperation(Summary = "Show events and user status", 
         Description = "Shows user signup status for open events. G = confirmed, S = signed up, C = waitlist, L = on the list")]
         public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
         {
+   
             return await _context.TimeslotLimited.FromSqlRaw(
                 "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms, "+
                 "case when ss.attend_nbr <= ts.event_slot_cnt and ss.confirm_ind then 'G' "+
@@ -60,32 +62,98 @@ namespace ComputerResetApi.Controllers
             IntlEventInd = a.IntlEventInd}).ToListAsync();
         }
 
-        /*[Authorize]
-        [HttpGet("api/signup/slot/{facebookId}")]
-        [SwaggerOperation(Summary = "Get current signup timeslot from open events", 
-        Description = "Get the open timeslot the user signed up for. Only returns one timeslot." + 
+        [Authorize]
+        [HttpGet("api/events/list/{facebookId}")]
+        [SwaggerOperation(Summary = "Get current open events and entered timeslot.", 
+        Description = "Get the open timeslot the user signed up for and list of all open events. " +
         " Does not return a value once an attendee number is assigned or events are closed." +
-        " Limited to users that have attended only 0 or 1 times.")]
-        public async Task<ActionResult<string>> GetSignupSlot(string facebookId)
+        " Slots are returned to users that have attended only 0 or 1 times." +
+        " G = confirmed, S = signed up, C = waitlist, L = on the list")]
+        public async Task<ActionResult<OpenEvent>> GetOpenListWithSlot(string facebookId)
         {
-            var timeslotId = await (from eventsignup in _context.EventSignup
-                join users in _context.Users
-                on eventsignup.UserId equals users.Id
-                join timeslot in _context.Timeslot
-                on eventsignup.TimeslotId equals timeslot.Id
-                where users.FbId == facebookId
-                && users.EventCnt < 2
-                && !eventsignup.DeleteInd
-                && eventsignup.AttendNbr == null
-                && timeslot.EventStartTms >= DateTime.Now
-                && timeslot.EventOpenTms <= DateTime.Now
-                orderby eventsignup.SignupTms
-                select new {
-                    eventsignup.Id
-                }).FirstOrDefaultAsync();
+            //set up our embedded return
 
-                return Ok(timeslotId);
-        }*/
+            List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
+            OpenEvent rtnTimeslot = new OpenEvent();
+
+            var openSlot = await(from t in _context.Timeslot
+                    where DateTime.Now >= t.EventOpenTms
+                    && t.EventStartTms >= DateTime.Now
+                    && !t.PrivateEventInd
+                    orderby t.EventStartTms
+                    select new TimeslotLimitedDb {
+                        Id = t.Id,
+                        EventStartTms = t.EventStartTms,
+                        EventEndTms = t.EventEndTms,
+                        EventClosed = t.EventClosed,
+                        EventNote = t.EventNote,
+                        IntlEventInd = t.IntlEventInd,
+                        EventSlotCnt = t.EventSlotCnt,
+                        OverbookCnt = t.OverbookCnt
+                    }).ToListAsync();
+
+            //Since we can only have one signup per open weekend now, can use first or default here.
+            var userSignSlot = await (from es in _context.EventSignup
+                    join u in _context.Users
+                    on es.UserId equals u.Id
+                    join t in _context.Timeslot
+                    on es.TimeslotId equals t.Id
+                    where u.FbId == facebookId
+                    && DateTime.Now >= t.EventOpenTms
+                    && t.EventStartTms >= DateTime.Now
+                    && !t.PrivateEventInd
+                    && !es.DeleteInd
+                    select new {
+                        es.Id,
+                        es.TimeslotId,
+                        es.AttendNbr,
+                        es.ConfirmInd,
+                        u.EventCnt
+                    }).SingleOrDefaultAsync();
+
+            foreach (TimeslotLimitedDb eventSlot in openSlot) {
+                if (userSignSlot != null && userSignSlot.TimeslotId == eventSlot.Id) {
+                    if (userSignSlot.AttendNbr <= eventSlot.EventSlotCnt && userSignSlot.ConfirmInd) {
+                        eventSlot.UserSlot = "G";
+                    } else if (userSignSlot.AttendNbr <= eventSlot.EventSlotCnt) {
+                        eventSlot.UserSlot = "S";
+                    } else if (userSignSlot.AttendNbr <= eventSlot.EventSlotCnt + eventSlot.OverbookCnt) {
+                        eventSlot.UserSlot = "C";
+                    } else if (userSignSlot.TimeslotId != null) {
+                        eventSlot.UserSlot = "L";
+                    }
+                }
+
+                finalTimeslot.Add(new TimeslotLimited() {
+                    Id = eventSlot.Id,
+                    EventStartTms = eventSlot.EventStartTms,
+                    EventEndTms = eventSlot.EventEndTms,
+                    UserSlot = eventSlot.UserSlot,
+                    EventClosed = eventSlot.EventClosed,
+                    EventNote = eventSlot.EventNote,
+                    IntlEventInd = eventSlot.IntlEventInd,                    
+                });
+
+            }
+
+            //assign compiled list to return var
+            rtnTimeslot.Timeslot = finalTimeslot;
+
+            if (userSignSlot != null && userSignSlot.EventCnt < 2 && userSignSlot.AttendNbr == null) {
+                //signed up, no slot, and < 2 visits, user should be able to move
+                rtnTimeslot.SignedUpTimeslot = userSignSlot.TimeslotId;
+                rtnTimeslot.MoveFlag = true;
+            } else if (userSignSlot == null) {
+                //not signed up, we want to show the signup link
+                rtnTimeslot.SignedUpTimeslot = 0;
+                rtnTimeslot.MoveFlag = false;
+            } else {
+                //slot is assigned and user > 1 visit
+                rtnTimeslot.MoveFlag = false;
+            }
+ 
+            return Ok(rtnTimeslot);
+        }
 
         [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
         [SwaggerOperation(Summary = "Moves a user to another event", 
@@ -112,6 +180,32 @@ namespace ComputerResetApi.Controllers
             eventUser.TimeslotId = newEventId;
             await _context.SaveChangesAsync();
             return Ok("You have been moved to the selected event.");
+        }
+
+        [Authorize]
+        [HttpPut("api/signup/delete/{timeslotId}/{facebookId}")]
+        [SwaggerOperation(Summary = "Delete a signup from the user.", 
+            Description = "Allows a user to delete a signup. It doesn't actually delete it, but ends up " +
+            "marking the signup as deleted. This way we can track them. ")]
+        public async Task<ActionResult<string>> UserDeleteSignup(int timeslotId, string facebookId)
+        {            
+            EventSignup eventUser = (from e in _context.EventSignup 
+            join u in _context.Users
+            on e.UserId equals u.Id
+            where e.TimeslotId == timeslotId 
+            && e.AttendNbr == null
+            && u.FbId == facebookId
+            && !e.DeleteInd
+            select e).SingleOrDefault();
+
+            if (eventUser == null) {
+                return NotFound("I'm sorry, we did not find this signup in the system.");
+            } 
+
+            eventUser.DeleteInd = true;
+            await _context.SaveChangesAsync();
+
+            return Ok("You have been removed from the selected event. You may now sign up for another open event.");
         }
 
         [Authorize]
@@ -394,7 +488,8 @@ namespace ComputerResetApi.Controllers
                     on new {users.CityNm, users.StateCd} equals new {CityNm = citylist.City, citylist.StateCd}
                     where users.BanFlag == false && eventsignup.AttendNbr == null
                     && slot.EventStartTms >= DateTime.Now
-                    orderby citylist.MetroplexInd descending, users.EventCnt, eventsignup.SignupTms
+                    && !eventsignup.DeleteInd
+                    orderby users.EventCnt, eventsignup.SignupTms
                     select new { 
                         eventsignup.Id,
                         users.FirstNm,
@@ -410,6 +505,8 @@ namespace ComputerResetApi.Controllers
                         users.EventCnt,
                         eventsignup.SignupTxt
                     }).ToListAsync();
+
+                    //removed sort citylist.MetroplexInd descending, 2020-12-07
 
                 var rtnArray = new {
                     slot = slotmaster,
