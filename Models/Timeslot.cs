@@ -19,7 +19,7 @@ namespace ComputerResetApi
         public bool? IntlEventInd { get; set; }
     }
 
-     public partial class TimeslotLimited
+    public partial class TimeslotLimited
     {
         [Column("id")]
         public int Id { get; set; }
@@ -38,8 +38,28 @@ namespace ComputerResetApi
 
     }
 
-    public partial class TimeslotAdmin
+     public partial class TimeslotLimitedDb
     {
+        public int Id { get; set; }
+        public DateTime EventStartTms { get; set; }
+        public DateTime EventEndTms { get; set; }
+        public string UserSlot { get; set; }
+        public bool? EventClosed { get; set; }
+        public string EventNote { get; set; }
+        public bool? IntlEventInd { get; set; }
+        public int EventSlotCnt {get; set; }
+        public int? OverbookCnt { get; set; }
+
+    }
+
+    public partial class OpenEvent
+    {
+        public List<TimeslotLimited> Timeslot { get; set; }
+        public int? SignedUpTimeslot { get; set; }
+        public bool MoveFlag { get; set; }
+    } 
+
+    public partial class TimeslotAdmin {
         public int Id { get; set; }
         public DateTime EventStartTms { get; set; }
         public DateTime EventEndTms { get; set; }
