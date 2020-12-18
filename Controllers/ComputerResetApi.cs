@@ -141,14 +141,15 @@ namespace ComputerResetApi.Controllers
 
             if (userSignSlot != null && userSignSlot.EventCnt < 2 && userSignSlot.AttendNbr == null) {
                 //signed up, no slot, and < 2 visits, user should be able to move
-                rtnTimeslot.SignedUpTimeslot = userSignSlot.TimeslotId;
+                rtnTimeslot.SignedUpTimeslot = userSignSlot.Id;
                 rtnTimeslot.MoveFlag = true;
             } else if (userSignSlot == null) {
                 //not signed up, we want to show the signup link
                 rtnTimeslot.SignedUpTimeslot = 0;
                 rtnTimeslot.MoveFlag = false;
             } else {
-                //slot is assigned and user > 1 visit
+                //slot is picked and user > 1 visit
+                rtnTimeslot.SignedUpTimeslot = -1;
                 rtnTimeslot.MoveFlag = false;
             }
  
