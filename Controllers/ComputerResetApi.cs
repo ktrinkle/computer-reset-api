@@ -277,10 +277,12 @@ namespace ComputerResetApi.Controllers
 
             var oldSession = _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefault();
 
+            //Angular passes datetime as zulu timestamp.
+
             if (oldSession != null) {
-                oldSession.EventStartTms = eventNew.EventStartTms;
-                oldSession.EventEndTms = eventNew.EventEndTms;
-                oldSession.EventOpenTms = eventNew.EventOpenTms;
+                oldSession.EventStartTms = DateTime.SpecifyKind(eventNew.EventStartTms, DateTimeKind.Utc);
+                oldSession.EventEndTms = DateTime.SpecifyKind(eventNew.EventEndTms, DateTimeKind.Utc);
+                oldSession.EventOpenTms = DateTime.SpecifyKind(eventNew.EventOpenTms, DateTimeKind.Utc);
                 oldSession.EventSlotCnt = eventNew.EventSlotCnt;
                 oldSession.SignupCnt = eventNew.SignupCnt;
                 oldSession.OverbookCnt = eventNew.OverbookCnt;
@@ -290,9 +292,9 @@ namespace ComputerResetApi.Controllers
                 message = "updated.";
             } else {
                 var newSession = new Timeslot(){
-                    EventStartTms = eventNew.EventStartTms,
-                    EventEndTms = eventNew.EventEndTms,
-                    EventOpenTms = eventNew.EventOpenTms,
+                    EventStartTms = DateTime.SpecifyKind(eventNew.EventStartTms, DateTimeKind.Utc),
+                    EventEndTms = DateTime.SpecifyKind(eventNew.EventEndTms, DateTimeKind.Utc),
+                    EventOpenTms = DateTime.SpecifyKind(eventNew.EventOpenTms, DateTimeKind.Utc),
                     EventClosed = false,
                     EventSlotCnt = eventNew.EventSlotCnt,
                     OverbookCnt = eventNew.OverbookCnt,
