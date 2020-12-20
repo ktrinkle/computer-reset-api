@@ -78,7 +78,7 @@ namespace ComputerResetApi.Controllers
 
             var openSlot = await(from t in _context.Timeslot
                     where DateTime.Now >= t.EventOpenTms
-                    && t.EventStartTms.Add(new TimeSpan(0,-1,0,0)) >= DateTime.Now
+                    && t.EventStartTms >= DateTime.Now.AddHours(1)
                     && !t.PrivateEventInd
                     orderby t.EventStartTms
                     select new TimeslotLimitedDb {
