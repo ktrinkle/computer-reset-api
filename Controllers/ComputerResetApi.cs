@@ -341,7 +341,8 @@ namespace ComputerResetApi.Controllers
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.eventId,
                 UserId = ourUserId,
-                SignupTms = DateTime.Now
+                SignupTms = DateTime.Now,
+                FlexibleInd = signup.flexibleInd
             };
 
             await _context.EventSignup.AddAsync(newEventSignup);
@@ -422,7 +423,8 @@ namespace ComputerResetApi.Controllers
                     users.BanFlag,
                     eventsignup.SignupTxt,
                     eventsignup.ConfirmInd,
-                    users.NoShowCnt
+                    users.NoShowCnt,
+                    eventsignup.FlexibleInd
                 };
 
                 return Ok(members);
@@ -473,7 +475,8 @@ namespace ComputerResetApi.Controllers
                         eventsignup.SignupTms,
                         users.NoShowCnt,
                         users.EventCnt,
-                        eventsignup.SignupTxt
+                        eventsignup.SignupTxt,
+                        eventsignup.FlexibleInd
                     }).ToListAsync();
 
                     //removed sort citylist.MetroplexInd descending, 2020-12-07
