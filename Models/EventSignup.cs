@@ -15,6 +15,7 @@ namespace ComputerResetApi
         public bool ConfirmInd { get; set; }
         public bool DeleteInd { get; set; }
         public bool NoShowInd { get; set; }
+        public bool FlexibleInd { get; set; }
 
         public virtual Timeslot Timeslot { get; set; }
         public virtual Users User { get; set; }
@@ -29,6 +30,7 @@ namespace ComputerResetApi
         public string realname { get; set; }
         public string firstNm { get; set; }
         public string lastNm { get; set; }
+        public bool flexibleInd { get; set; }
     }
 
     public partial class EventSignupNote

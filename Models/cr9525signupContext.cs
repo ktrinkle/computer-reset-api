@@ -66,6 +66,8 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.NoShowInd).HasColumnName("noshow_ind");
 
+                entity.Property(e => e.FlexibleInd).HasColumnName("flexible_ind");
+
                 entity.HasOne(d => d.Timeslot)
                     .WithMany()
                     .HasForeignKey(d => d.TimeslotId)
