@@ -29,39 +29,6 @@ namespace ComputerResetApi.Controllers
 
         }
 
-        // GET: api/events/show
-        
-        [Authorize]
-        [HttpGet("api/events/show/open/{facebookId}")]
-        [Obsolete]
-        [SwaggerOperation(Summary = "Show events and user status", 
-        Description = "Shows user signup status for open events. G = confirmed, S = signed up, C = waitlist, L = on the list")]
-        public async Task<ActionResult<IEnumerable<TimeslotLimited>>> GetOpenTimeslot(string facebookId)
-        {
-   
-            return await _context.TimeslotLimited.FromSqlRaw(
-                "select ts.id, ts.event_start_tms EventStartTms, ts.event_end_tms EventEndTms, "+
-                "case when ss.attend_nbr <= ts.event_slot_cnt and ss.confirm_ind then 'G' "+
-                "when ss.attend_nbr <= ts.event_slot_cnt then 'S' " +
-                "when ss.attend_nbr <= (ts.event_slot_cnt + ts.overbook_cnt) then 'C' "+
-                "when ss.timeslot_id is not null then 'L' else null end userslot, "+
-                "ts.event_closed EventClosed, ts.event_note EventNote, ts.intl_event_ind IntlEventInd "+
-                "from timeslot ts left outer join (select es.timeslot_id, es.attend_nbr, "+
-                "es.confirm_ind from event_signup es "+
-                "inner join users u on es.user_id = u.id and u.fb_id = {0}) ss "+
-                "on ts.id = ss.timeslot_id "+
-                "where current_timestamp >= ts.event_open_tms "+
-                "and ts.event_start_tms >= now() and (not ts.private_event_ind)"+
-                "order by ts.event_start_tms", facebookId
-            ).Select(a => new TimeslotLimited(){Id = a.Id, 
-            EventStartTms = a.EventStartTms, 
-            EventEndTms = a.EventEndTms,
-            UserSlot = a.UserSlot,
-            EventClosed = a.EventClosed,
-            EventNote = a.EventNote,
-            IntlEventInd = a.IntlEventInd}).ToListAsync();
-        }
-
         [Authorize]
         [HttpGet("api/events/list/{facebookId}")]
         [SwaggerOperation(Summary = "Get current open events and entered timeslot.", 
@@ -75,10 +42,11 @@ namespace ComputerResetApi.Controllers
 
             List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
             OpenEvent rtnTimeslot = new OpenEvent();
+            DateTime limitTime = DateTime.Now.AddHours(1).ToUniversalTime();
 
             var openSlot = await(from t in _context.Timeslot
                     where DateTime.Now >= t.EventOpenTms
-                    && t.EventStartTms >= DateTime.Now.AddHours(1)
+                    && t.EventStartTms >= limitTime
                     && !t.PrivateEventInd
                     orderby t.EventStartTms
                     select new TimeslotLimitedDb {
@@ -100,7 +68,7 @@ namespace ComputerResetApi.Controllers
                     on es.TimeslotId equals t.Id
                     where u.FbId == facebookId
                     && DateTime.Now >= t.EventOpenTms
-                    && t.EventStartTms >= DateTime.Now
+                    && t.EventStartTms >= limitTime
                     && !t.PrivateEventInd
                     && !es.DeleteInd
                     select new {
@@ -156,6 +124,7 @@ namespace ComputerResetApi.Controllers
             return Ok(rtnTimeslot);
         }
 
+        [Authorize]
         [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
         [SwaggerOperation(Summary = "Moves a user to another event", 
             Description = "This will move a user to a different event. Requires user to match the timeslot owner." 
@@ -277,7 +246,7 @@ namespace ComputerResetApi.Controllers
 
             var oldSession = _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefault();
 
-            //Angular passes datetime as zulu timestamp.
+            //Angular passes datetime as zulu timestamp. We need to tell Postgres this is the case.
 
             if (oldSession != null) {
                 oldSession.EventStartTms = DateTime.SpecifyKind(eventNew.EventStartTms, DateTimeKind.Utc);
@@ -346,8 +315,6 @@ namespace ComputerResetApi.Controllers
                                  && t.EventStartTms > DateTime.Now
                                  select new {e.Id}).Count();
 
-            //var existUserEvent = _context.EventSignup.Where(a => a.UserId == ourUserId 
-            //&& a.TimeslotId == signup.eventId).FirstOrDefault();
             if (existUserEvent > 0) {
                 return Content("It looks like you have already signed up for an open event. " +
                 "You may only sign up for one event per weekend.");
