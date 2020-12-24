@@ -76,7 +76,8 @@ namespace ComputerResetApi.Controllers
                         es.TimeslotId,
                         es.AttendNbr,
                         es.ConfirmInd,
-                        u.EventCnt
+                        u.EventCnt,
+                        es.FlexibleInd
                     }).SingleOrDefaultAsync();
 
             foreach (TimeslotLimitedDb eventSlot in openSlot) {
@@ -111,14 +112,18 @@ namespace ComputerResetApi.Controllers
                 //signed up, no slot, and < 2 visits, user should be able to move
                 rtnTimeslot.SignedUpTimeslot = userSignSlot.Id;
                 rtnTimeslot.MoveFlag = true;
+                rtnTimeslot.FlexSlot = userSignSlot.FlexibleInd;
             } else if (userSignSlot == null) {
                 //not signed up, we want to show the signup link
                 rtnTimeslot.SignedUpTimeslot = 0;
                 rtnTimeslot.MoveFlag = false;
+                rtnTimeslot.FlexSlot = false;
             } else {
-                //slot is picked and user > 1 visit
+                //slot is picked and user > 1 visit. Flex ind only for user.
                 rtnTimeslot.SignedUpTimeslot = -1;
                 rtnTimeslot.MoveFlag = false;
+                rtnTimeslot.FlexSlot = userSignSlot.FlexibleInd;
+
             }
  
             return Ok(rtnTimeslot);
@@ -1037,6 +1042,17 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User signup ID not found");
             } 
 
+            //grab user name so it looks better for admin
+            var slotUsername = (from u in _context.Users
+            where u.Id == eventUser.UserId
+            select new {u.FirstNm, u.LastNm}).SingleOrDefault();
+
+            if (slotUsername == null) {
+                return NotFound("We could not find a user for that timeslot.");
+            } else {
+                returnMsg = slotUsername.FirstNm + " " + slotUsername.LastNm;
+            }
+
             //move from old to new
             
             eventUser.TimeslotId = newEventId;
@@ -1058,9 +1074,9 @@ namespace ComputerResetApi.Controllers
             //only set if we get a value back
             if (newSlotNbr.AttendNbr != null) {
                 eventUser.AttendNbr = newSlotNbr.AttendNbr;
-                returnMsg = "The attendee has been moved to the new event with slot #" + newSlotNbr.AttendNbr.ToString();
+                returnMsg += " has been moved to the new event with slot #" + newSlotNbr.AttendNbr.ToString();
             } else {
-                returnMsg = "The attendee was moved to the new event, but no slot was available.";
+                returnMsg += " was moved to the new event, but no slot was available.";
             }
 
             await _context.SaveChangesAsync();

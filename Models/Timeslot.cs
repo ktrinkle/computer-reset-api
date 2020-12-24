@@ -57,6 +57,7 @@ namespace ComputerResetApi
         public List<TimeslotLimited> Timeslot { get; set; }
         public int? SignedUpTimeslot { get; set; }
         public bool MoveFlag { get; set; }
+        public bool FlexSlot { get; set; }
     } 
 
     public partial class TimeslotAdmin {
