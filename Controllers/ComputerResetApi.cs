@@ -318,6 +318,7 @@ namespace ComputerResetApi.Controllers
                                  where e.UserId == ourUserId
                                  && t.EventOpenTms <= DateTime.Now
                                  && t.EventStartTms > DateTime.Now
+                                 && e.DeleteInd == false
                                  select new {e.Id}).Count();
 
             if (existUserEvent > 0) {
@@ -327,7 +328,7 @@ namespace ComputerResetApi.Controllers
 
             //check for event count - new per Raymond. Will run as final verification.
 
-            int currCount = _context.EventSignup.Count(m => m.TimeslotId == signup.eventId);
+            int currCount = _context.EventSignup.Where(m => m.DeleteInd == false).Count(m => m.TimeslotId == signup.eventId);
             var eventStats = _context.Timeslot.Where(a => a.Id == signup.eventId)
                 .FirstOrDefault();
 
