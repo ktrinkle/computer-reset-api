@@ -235,14 +235,14 @@ namespace ComputerResetApi.Controllers
                 return BadRequest("The booked, overbook or signup count cannot be less than zero.");
             }
 
-            if ((eventNew.EventSlotCnt >= eventNew.SignupCnt) || (eventNew.OverbookCnt > eventNew.SignupCnt) || eventNew.EventSlotCnt + eventNew.OverbookCnt > eventNew.SignupCnt) {
+            if ((eventNew.EventSlotCnt > eventNew.SignupCnt) || (eventNew.OverbookCnt > eventNew.SignupCnt) || eventNew.EventSlotCnt + eventNew.OverbookCnt > eventNew.SignupCnt) {
                 return BadRequest("Events are limited to no more than the maximum signup count.");
             }
 
             //do we have an event that already has this start date/time? if so, fail
-            var existSession = _context.Timeslot.Where( a => a.EventStartTms == eventNew.EventStartTms).ToList();
+            var existSession = _context.Timeslot.Where( a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id ).ToList();
             if (existSession.Count() > 0) {
-                return BadRequest("There is already an event with this start date and time.");
+                return Problem("There is already an event with this start date and time.");
             }
 
             //everything checks out, confirm that event exists and add or update
@@ -261,7 +261,6 @@ namespace ComputerResetApi.Controllers
                 oldSession.SignupCnt = eventNew.SignupCnt;
                 oldSession.OverbookCnt = eventNew.OverbookCnt;
                 oldSession.EventNote = eventNew.EventNote;
-                oldSession.PrivateEventInd = eventNew.PrivateEventInd;
                 oldSession.IntlEventInd = eventNew.IntlEventInd;
                 message = "updated.";
             } else {
