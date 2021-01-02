@@ -1014,7 +1014,8 @@ namespace ComputerResetApi.Controllers
             select new {
                 users.Id,
                 users.FirstNm,
-                users.LastNm
+                users.LastNm,
+                users.RealNm
             }).ToListAsync();
 
             return Ok(members);
