@@ -42,10 +42,10 @@ namespace ComputerResetApi.Controllers
 
             List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
             OpenEvent rtnTimeslot = new OpenEvent();
-            DateTime limitTime = DateTime.Now.AddHours(1).ToUniversalTime();
+            DateTime limitTime = DateTime.UtcNow.AddHours(1);
 
             var openSlot = await(from t in _context.Timeslot
-                    where DateTime.Now >= t.EventOpenTms
+                    where DateTime.UtcNow >= t.EventOpenTms
                     && t.EventStartTms >= limitTime
                     && !t.PrivateEventInd
                     orderby t.EventStartTms
@@ -67,7 +67,7 @@ namespace ComputerResetApi.Controllers
                     join t in _context.Timeslot
                     on es.TimeslotId equals t.Id
                     where u.FbId == facebookId
-                    && DateTime.Now >= t.EventOpenTms
+                    && DateTime.UtcNow >= t.EventOpenTms
                     && t.EventStartTms >= limitTime
                     && !t.PrivateEventInd
                     && !es.DeleteInd
@@ -315,8 +315,8 @@ namespace ComputerResetApi.Controllers
                                  join t in _context.Timeslot
                                  on e.TimeslotId equals t.Id
                                  where e.UserId == ourUserId
-                                 && t.EventOpenTms <= DateTime.Now
-                                 && t.EventStartTms > DateTime.Now
+                                 && t.EventOpenTms <= DateTime.UtcNow
+                                 && t.EventStartTms > DateTime.UtcNow
                                  && e.DeleteInd == false
                                  select new {e.Id}).Count();
 
