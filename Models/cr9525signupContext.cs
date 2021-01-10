@@ -226,6 +226,9 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.NoShowCnt)
                     .HasColumnName("noshow_cnt");
+
+                entity.Property(e => e.LastLoginTms)
+                    .HasColumnName("last_login_tms");
             });
 
             modelBuilder.Entity<BanListText>(entity =>
