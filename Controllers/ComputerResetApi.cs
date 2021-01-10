@@ -852,8 +852,7 @@ namespace ComputerResetApi.Controllers
             
             var userLookup = await _context.Users.Where( a => 
                 a.FirstNm.ToLower().Contains(nameVal.ToLower()) 
-                || a.LastNm.ToLower().Contains(nameVal.ToLower())
-                || a.RealNm.ToLower().Contains(nameVal.ToLower()))
+                || a.LastNm.ToLower().Contains(nameVal.ToLower()))
                 .Select(a => new UserManual() {
                     Id = a.Id,
                     FirstNm = a.FirstNm,
