@@ -725,6 +725,9 @@ namespace ComputerResetApi.Controllers
         
         [Authorize]    
         [HttpPost("api/users/attrib")]
+        [SwaggerOperation(Summary = "Gets or sets attributes of user.", 
+        Description = "Gets the attributes of the user (banned, admin, volunteer), or creates the new user " +
+        "record if the user does not exist.")]
 
         public async Task<ActionResult<UserAttrib>> GetUserAttrib(UserSmall fbInfo)
         {
@@ -739,7 +742,8 @@ namespace ComputerResetApi.Controllers
                     FbId = fbInfo.facebookId,
                     FirstNm = fbInfo.firstName,
                     LastNm = fbInfo.lastName,
-                    EventCnt = 0
+                    EventCnt = 0,
+                    LastLoginTms = DateTime.UtcNow
                 };
 
                 //auto-ban functionality based on Facebook name match.
@@ -758,10 +762,14 @@ namespace ComputerResetApi.Controllers
                 if (existUserTest.FirstNm != fbInfo.firstName || existUserTest.LastNm != fbInfo.lastName) {
                     existUserTest.FirstNm = fbInfo.firstName;
                     existUserTest.LastNm = fbInfo.lastName;
-                    
-                    _context.Users.Update(existUserTest);
-                    await _context.SaveChangesAsync();
                 }
+
+                //always update last login.
+                existUserTest.LastLoginTms = DateTime.UtcNow;
+                    
+                _context.Users.Update(existUserTest);
+                await _context.SaveChangesAsync();
+
             }
 
             UserAttrib existUser = new UserAttrib();
