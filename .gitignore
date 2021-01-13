@@ -231,4 +231,4 @@ _Pvt_Extensions
 .fake/
 
 # .NET core appsettings dev
-appsettings.Development.json
+./appsettings.Development.json

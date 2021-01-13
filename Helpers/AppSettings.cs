@@ -9,5 +9,6 @@ namespace ComputerResetApi.Helpers
         public string Shaker { get; set; }
         public string[] Whitelist { get; set; }
         public string SignupOpen{ get; set; }
+        public int? AutoClear { get; set; }
     }
 }

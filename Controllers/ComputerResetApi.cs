@@ -291,6 +291,12 @@ namespace ComputerResetApi.Controllers
         public async Task<ContentResult> SignupEvent(EventSignupCall signup)
         {
             int ourUserId;
+            int? newEventId;
+            bool autoClearInd = false;
+
+            //Get auto-clear flag
+            var autoclearSetting = _appSettings.Value;
+            int autoClearLimit = autoclearSetting.AutoClear ?? 0;
 
             //Keyboard kid rule
             if (signup.realname.ToLower().IndexOf("lewellen") >= 0) {
@@ -309,6 +315,9 @@ namespace ComputerResetApi.Controllers
                 return Content("I am sorry, you are not allowed to sign up for this event.");
             } else {
                 ourUserId = existUser.Id;
+                if (existUser.EventCnt < autoClearLimit) {
+                    autoClearInd = true;
+                }
             }
 
             var existUserEvent = (from e in _context.EventSignup
@@ -342,12 +351,20 @@ namespace ComputerResetApi.Controllers
                 return Content("I'm sorry, but this event has filled up. Please select another event.");
             }
 
+            //auto-clear functionality
+            if (autoClearInd) {
+                newEventId = getSlotNumber(signup.eventId);
+            } else {
+                newEventId = null;
+            }
+
             //we passed all the checks, now lets do this thing.
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.eventId,
                 UserId = ourUserId,
                 SignupTms = DateTime.Now,
-                FlexibleInd = signup.flexibleInd
+                FlexibleInd = signup.flexibleInd,
+                AttendNbr = newEventId
             };
 
             await _context.EventSignup.AddAsync(newEventSignup);
@@ -1066,23 +1083,12 @@ namespace ComputerResetApi.Controllers
             eventUser.TimeslotId = newEventId;
 
             //get slot number from raw sql query - to code
-                var newSlotNbr = await (_context.EventSignup.FromSqlRaw(
-                    "select min(generate_series) attend_nbr from ( " +
-                    "select ats.timeslot_id, es.attend_nbr, ats.generate_series " +
-                    "from event_signup es right outer join " +
-                    "(select generate_series(1, event_slot_cnt), id timeslot_id from timeslot) ats " +
-                    "on es.timeslot_id = ats.timeslot_id " +
-                    "and es.attend_nbr = ats.generate_series " +
-                    "where es.attend_nbr is null " +
-                    "and ats.timeslot_id = {0}) ts2", newEventId
-                ).Select(a => new {
-                    AttendNbr = a.AttendNbr
-                })).FirstOrDefaultAsync(); 
+            var newSlotNbr = getSlotNumber(newEventId);
 
             //only set if we get a value back
-            if (newSlotNbr.AttendNbr != null) {
-                eventUser.AttendNbr = newSlotNbr.AttendNbr;
-                returnMsg += " has been moved to the new event with slot #" + newSlotNbr.AttendNbr.ToString();
+            if (newSlotNbr != null) {
+                eventUser.AttendNbr = newSlotNbr;
+                returnMsg += " has been moved to the new event with slot #" + newSlotNbr.ToString();
             } else {
                 returnMsg += " was moved to the new event, but no slot was available.";
             }
@@ -1112,6 +1118,23 @@ namespace ComputerResetApi.Controllers
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;
+        }
+
+        private int? getSlotNumber(int newEventId) {
+            var newSlotNbr = (_context.EventSignup.FromSqlRaw(
+                "select min(generate_series) attend_nbr from ( " +
+                "select ats.timeslot_id, es.attend_nbr, ats.generate_series " +
+                "from event_signup es right outer join " +
+                "(select generate_series(1, event_slot_cnt), id timeslot_id from timeslot) ats " +
+                "on es.timeslot_id = ats.timeslot_id " +
+                "and es.attend_nbr = ats.generate_series " +
+                "where es.attend_nbr is null " +
+                "and ats.timeslot_id = {0}) ts2", newEventId
+            ).Select(a => new {
+                AttendNbr = a.AttendNbr
+            })).FirstOrDefault(); 
+
+            return newSlotNbr.AttendNbr;
         }
 
         [HttpGet("api/siteup")]
