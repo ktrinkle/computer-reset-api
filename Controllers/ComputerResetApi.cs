@@ -10,7 +10,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
-using Npgsql.NodaTime;
 
 namespace ComputerResetApi.Controllers
 {
@@ -202,7 +201,7 @@ namespace ComputerResetApi.Controllers
             if (!CheckAdmin(facebookId)) {
                 return null;
             } else {
-                return await _context.Timeslot.OrderBy(a => a.EventStartTms).ToListAsync();
+                return await _context.Timeslot.OrderByDescending(a => a.EventStartTms).ToListAsync();
             }
         }
   
