@@ -9,7 +9,6 @@ using Microsoft.OpenApi.Models;
 using ComputerResetApi.Models;
 using ComputerResetApi.Helpers;
 using ComputerResetApi.Services;
-using MaximeRouiller.Azure.AppService.EasyAuth;
 
 namespace ComputerResetApi
 {
@@ -90,9 +89,6 @@ namespace ComputerResetApi
                 {
                     options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
                 });
-
-            //Easyauth
-            services.AddAuthentication().AddEasyAuthAuthentication((o) => { });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -135,7 +131,7 @@ namespace ComputerResetApi
                 .AllowAnyHeader());
 
             // custom jwt auth middleware
-            //app.UseMiddleware<JwtMiddleware>();
+            app.UseMiddleware<JwtMiddleware>();
 
             app.UseAuthentication();
 
