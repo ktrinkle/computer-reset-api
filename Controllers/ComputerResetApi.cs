@@ -739,7 +739,7 @@ namespace ComputerResetApi.Controllers
             return Content("The status of event " + eventId.ToString() + " has changed.");
         }
         
-        [Authorize]    
+        [Authorize]
         [HttpPost("api/users/attrib")]
         [SwaggerOperation(Summary = "Gets or sets attributes of user.", 
         Description = "Gets the attributes of the user (banned, admin, volunteer), or creates the new user " +
@@ -748,6 +748,10 @@ namespace ComputerResetApi.Controllers
         public async Task<ActionResult<UserAttrib>> GetUserAttrib(UserSmall fbInfo)
         {
             //gets status flag of user and creates user record if not existing
+
+            string msToken = Request.Headers["X-MS-TOKEN-FACEBOOK-ACCESS-TOKEN"];
+
+            Console.WriteLine(msToken); //for testing
 
             //do we have user with this id - ours?
             //test if user exists in table. if not, create.
