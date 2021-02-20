@@ -20,10 +20,6 @@ namespace ComputerResetApi.Services
     public class UserService : IUserService
     {
         // users hardcoded for dev purposes, need to move to secrets or db
-        private List<User> _users = new List<User>
-        {
-            new User { Id = 1, FirstName = "Computer", LastName = "Reset", Username = "byronpcjr", Password = "IdSFaWr7*@[" }
-        };
 
         private readonly AppSettings _appSettings;
 
