@@ -51,9 +51,12 @@ namespace ComputerResetApi.Controllers
             string jwt = string.Empty;
 
             //call FB web service
-            if (fbInfo.facebookId == "997") {
-                //assume dev
-                return Ok(_userService.generateJwtToken(new UserSmall() {facebookId = "997"}));
+            if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
+                // hard coded for dev
+                return Ok(_userService.generateJwtToken(new UserSmall() {
+                    firstName = "Dev",
+                    lastName = "Mode",
+                    facebookId = _appSettings.Value.DevUserId}));
             }
             else 
             {
@@ -149,7 +152,7 @@ namespace ComputerResetApi.Controllers
 
             //do we have user with this id - ours?
             //test if user exists in table. if not, create.
-            if (!CheckAdmin(fbInfo.facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
             
@@ -193,16 +196,16 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]    
-        [HttpGet("api/users/lookup/{nameVal}/{facebookId}")]
+        [HttpGet("api/users/lookup/{nameVal}")]
         [SwaggerOperation(Summary = "Lookup a user", 
             Description = "Looks up a user by name element.")]
-        public async Task<ActionResult<UserManual>> LookupUser(string nameVal, string facebookId)
+        public async Task<ActionResult<UserManual>> LookupUser(string nameVal)
         {
             //gets status flag of user and creates user record if not existing
 
             //do we have user with this id - ours?
             //test if user exists in table. if not, create.
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
             
@@ -232,7 +235,7 @@ namespace ComputerResetApi.Controllers
         {
             //manually edits the ban user text list
 
-            if (!CheckAdmin(banList.facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -268,12 +271,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/users/update/admin/{id}/{facebookId}")]
-        public async Task<ActionResult<string>> AdminUserId(int id, string facebookId)
+        [HttpPut("api/users/update/admin/{id}")]
+        public async Task<ActionResult<string>> AdminUserId(int id)
         {
             //sets admin flag of user
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -295,13 +298,13 @@ namespace ComputerResetApi.Controllers
         // PUT: api/users/update/ban
         // Bans a user
         [Authorize]
-        [HttpPut("api/users/update/ban/{id}/{facebookId}")]
-        public async Task<ActionResult<string>> BanUserId(int id, string facebookId)
+        [HttpPut("api/users/update/ban/{id}")]
+        public async Task<ActionResult<string>> BanUserId(int id)
         {
             //sets ban flag of user
             //odds are pretty good we're not unbanning and we can do that in the DB
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -323,11 +326,11 @@ namespace ComputerResetApi.Controllers
         // PUT: api/users/volunteer
         // Flips flag on volunteer
         [Authorize]
-        [HttpPut("api/users/update/volunteer/{id}/{facebookId}")]
-        public async Task<ActionResult<string>> VolunteerUserId(int id, string facebookId)
+        [HttpPut("api/users/update/volunteer/{id}")]
+        public async Task<ActionResult<string>> VolunteerUserId(int id)
         {
             //sets volunteer flag of user
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -347,12 +350,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]    
-        [HttpGet("api/users/bantext/{facebookId}")]
+        [HttpGet("api/users/bantext")]
 
-        public async Task<ActionResult<List<BanListText>>> GetBanListText(string facebookId)
+        public async Task<ActionResult<List<BanListText>>> GetBanListText()
         {
             //gets list of manually text banned users
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -364,12 +367,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]    
-        [HttpGet("api/users/{facebookId}")]
+        [HttpGet("api/users")]
 
-        public async Task<ActionResult<UserAttrib>> GetUserList(string facebookId)
+        public async Task<ActionResult<UserAttrib>> GetUserList()
         {
             //gets lookup of users for typeahead
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -384,8 +387,8 @@ namespace ComputerResetApi.Controllers
             return Ok(members);
         }
 
-        private bool CheckAdmin(string fbId) {
-            var adminCheck = _context.Users.Where(a=> a.FbId == fbId)
+        private bool CheckAdmin() {
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;

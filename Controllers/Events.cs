@@ -1,18 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using ComputerResetApi.Models;
 using System;
 using Swashbuckle.AspNetCore.Annotations;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
-using Newtonsoft.Json.Linq;
 using ComputerResetApi.Services;
-using ComputerResetApi.Entities;
 
 namespace ComputerResetApi.Controllers
 {
@@ -23,24 +20,29 @@ namespace ComputerResetApi.Controllers
     {
        private readonly cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
+       private readonly IUserService _userService;
 
         public EventController(cr9525signupContext context, 
-            IOptions<AppSettings> appSettings)
+            IOptions<AppSettings> appSettings,
+            IUserService userService)
         {
             _context = context;
             _appSettings = appSettings;
+            _userService = userService;
         }
 
         [Authorize]
-        [HttpGet("api/events/list/{facebookId}")]
+        [HttpGet("api/events/list")]
         [SwaggerOperation(Summary = "Get current open events and entered timeslot.", 
         Description = "Get the open timeslot the user signed up for and list of all open events. " +
         " Does not return a value once an attendee number is assigned or events are closed." +
         " Slots are returned to users that have attended only 0 or 1 times." +
         " G = confirmed, S = signed up, C = waitlist, L = on the list")]
-        public async Task<ActionResult<OpenEvent>> GetOpenListWithSlot(string facebookId)
+        public async Task<ActionResult<OpenEvent>> GetOpenListWithSlot()
         {
-            //set up our embedded return
+            // set up our embedded return
+
+            string facebookId = _userService.getFbFromHeader(HttpContext);
 
             List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
             OpenEvent rtnTimeslot = new OpenEvent();
@@ -131,10 +133,11 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/show/upcoming/{facebookId}")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession(string facebookId)
+        [HttpGet("api/events/show/upcoming")]
+        [SwaggerOperation(Summary = "Show all upcoming events")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession()
         {
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return null;
             } else {
                 return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
@@ -143,10 +146,11 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/show/all/{facebookId}")]
-        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowAllSession(string facebookId)
+        [HttpGet("api/events/show/all")]
+        [SwaggerOperation(Summary = "Show all events ever created.")]
+        public async Task<ActionResult<IEnumerable<Timeslot>>> ShowAllSession()
         {
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return null;
             } else {
                 return await _context.Timeslot.OrderByDescending(a => a.EventStartTms).ToListAsync();
@@ -157,12 +161,13 @@ namespace ComputerResetApi.Controllers
         // Creates a new session
         [Authorize]
         [HttpPost("api/events/create")]
+        [SwaggerOperation(Summary = "Create a new event for signups.")]
         public async Task<IActionResult> CreateSession(TimeslotAdmin eventNew)
         {
             //defaults to false for event_closed
             //verify datetime and int integrity
 
-            if (!CheckAdmin(eventNew.facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not authorized to access this function.");
             }
 
@@ -235,6 +240,7 @@ namespace ComputerResetApi.Controllers
         // user signs up for an event
         [Authorize]
         [HttpPost("api/events/signup")]
+        [SwaggerOperation(Summary = "Sign up for an open event.")]
         public async Task<ContentResult> SignupEvent(EventSignupCall signup)
         {
             int ourUserId;
@@ -327,13 +333,13 @@ namespace ComputerResetApi.Controllers
             return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages and message requests for confirmation from the volunteers.");
         }
 
-        // GET: api/events/signedup
-        //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/dayof/{eventId}/{facebookId}")]
-        public IActionResult GetSignupConfirm(int eventId, string facebookId)
+        [HttpGet("api/events/signedup/dayof/{eventId}")]
+        [SwaggerOperation(Summary = "Gets all signed up users",
+        Description = "Returns all folks signed up, excluding bans and those who have attended before")]
+        public IActionResult GetSignupConfirm(int eventId)
         {
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } else {
                 var members =  from eventsignup in _context.EventSignup
@@ -365,10 +371,10 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/{eventId}/{facebookId}")]
-        public IActionResult GetSignedUpMembers(int eventId, string facebookId)
+        [HttpGet("api/events/signedup/{eventId}")]
+        public IActionResult GetSignedUpMembers(int eventId)
         {
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } else {
                 var members =  from eventsignup in _context.EventSignup
@@ -402,10 +408,10 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/standby/list/{facebookId}")]
-        public async Task<IActionResult> GetStandbyDateEvents(string facebookId)
+        [HttpGet("api/events/standby/list")]
+        public async Task<IActionResult> GetStandbyDateEvents()
         {
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } else {
                 var slotmaster = await (_context.Timeslot.FromSqlRaw(
@@ -461,12 +467,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/signedup/{slotId}/{attendNbr}/{facebookId}")]
-        public async Task<ActionResult<string>> UserGetsSlot(int slotId, int? attendNbr, string facebookId)
+        [HttpPut("api/events/signedup/{slotId}/{attendNbr}")]
+        public async Task<ActionResult<string>> UserGetsSlot(int slotId, int? attendNbr)
         {
             //marks a user as getting a slot in an event
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             }
 
@@ -493,7 +499,7 @@ namespace ComputerResetApi.Controllers
         [HttpPost("api/events/signup/note")]
         public async Task<ContentResult> UpdateSignupNote(EventSignupNote signup)
         {
-            if (!CheckAdmin(signup.fbId)) {
+            if (!CheckAdmin()) {
                 return Content("You are not allowed to access this function.");
             }            
             
@@ -512,12 +518,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/confirm/{id}/{facebookId}")]
-        public async Task<ActionResult<string>> ConfirmUser(int id, string facebookId)
+        [HttpPut("api/events/confirm/{id}")]
+        public async Task<ActionResult<string>> ConfirmUser(int id)
         {
             //marks a user as confirmed for an event
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } 
             
@@ -545,15 +551,15 @@ namespace ComputerResetApi.Controllers
         }
         
         [Authorize]
-        [HttpPut("api/events/attended/{id}/{facebookId}")]
+        [HttpPut("api/events/attended/{id}")]
         [SwaggerOperation(Summary = "Mark user as attended", 
             Description = "This marks a user as attending an event and adjusts the event count accordingly.")]
-        public async Task<ActionResult<string>> MarkUserAsAttend(int id, string facebookId)
+        public async Task<ActionResult<string>> MarkUserAsAttend(int id)
         {
             //marks a user as attended an event, and updates user table with new count
             int eventAttendInd;
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } 
             
@@ -590,15 +596,15 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/noshow/{id}/{facebookId}")]
+        [HttpPut("api/events/noshow/{id}")]
         [SwaggerOperation(Summary = "Mark user as no-show", 
             Description = "This marks a user who did not show up at an event and adjusts the no-show count accordingly.")]
-        public async Task<ActionResult<string>> MarkUserNoShow(int id, string facebookId)
+        public async Task<ActionResult<string>> MarkUserNoShow(int id)
         {
             //marks a user as attended an event, and updates user table with new count
             int eventNoShowInd;
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             } 
             
@@ -639,12 +645,12 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/close/{eventId}/{facebookId}")]
-        public async Task<ContentResult> CloseEvent(int eventId, string facebookId)
+        [HttpPut("api/events/close/{eventId}")]
+        public async Task<ContentResult> CloseEvent(int eventId)
         {
             //swaps open and closed status of event
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Content("You are not permitted to use this function.");
             } 
 
@@ -664,12 +670,12 @@ namespace ComputerResetApi.Controllers
 
 
         [Authorize]
-        [HttpPut("api/events/private/{eventId}/{facebookId}")]
-        public async Task<ContentResult> PrivateEventChange(int eventId, string facebookId)
+        [HttpPut("api/events/private/{eventId}")]
+        public async Task<ContentResult> PrivateEventChange(int eventId)
         {
             //swaps open and closed status of event
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Content("You are not permitted to use this function.");
             } 
 
@@ -688,16 +694,16 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/move/{slotId}/{newEventId}/{facebookId}")]
+        [HttpPut("api/events/move/{slotId}/{newEventId}")]
         [SwaggerOperation(Summary = "Assign a standby to an event", 
             Description = "This will move a user to a different event and assign a slot. Designed for easy standby processing.")]
-        public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId, string facebookId)
+        public async Task<ActionResult<string>> MoveUserSlot(int slotId, int newEventId)
         {
             //moves a user to another event - admin
 
             var returnMsg = "";
 
-            if (!CheckAdmin(facebookId)) {
+            if (!CheckAdmin()) {
                 return Unauthorized();
             }
 
@@ -740,8 +746,8 @@ namespace ComputerResetApi.Controllers
             return Ok(returnMsg);
         }
 
-        private bool CheckAdmin(string fbId) {
-            var adminCheck = _context.Users.Where(a=> a.FbId == fbId)
+        private bool CheckAdmin() {
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;
