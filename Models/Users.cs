@@ -25,6 +25,7 @@ namespace ComputerResetApi
         public string firstName { get; set; }
         public string lastName { get; set; }
         public string facebookId { get; set; }
+        public string accessToken { get; set; }
     }
 
     public partial class UserAttrib
@@ -34,6 +35,7 @@ namespace ComputerResetApi
         public string RealNm { get; set; }
         public bool? AdminFlag { get; set; }
         public bool? VolunteerFlag { get; set; }
+        public string jwt { get; set; }
      }
 
     public partial class UserManual

@@ -10,6 +10,9 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
+using Newtonsoft.Json.Linq;
+using ComputerResetApi.Services;
+using ComputerResetApi.Entities;
 
 namespace ComputerResetApi.Controllers
 {
@@ -19,13 +22,19 @@ namespace ComputerResetApi.Controllers
     {
        private readonly cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
+       private readonly IHttpClientFactory _clientFactory;
+       private readonly IUserService _userService;
        private static readonly HttpClient _client = new HttpClient();
 
-        public ComputerResetController(cr9525signupContext context, IOptions<AppSettings> appSettings)
+        public ComputerResetController(cr9525signupContext context, 
+            IOptions<AppSettings> appSettings, 
+            IHttpClientFactory clientFactory,
+            IUserService userService)
         {
             _context = context;
             _appSettings = appSettings;
-
+            _clientFactory = clientFactory;
+            _userService = userService;
         }
 
         [Authorize]
@@ -122,7 +131,6 @@ namespace ComputerResetApi.Controllers
                 rtnTimeslot.SignedUpTimeslot = -1;
                 rtnTimeslot.MoveFlag = false;
                 rtnTimeslot.FlexSlot = userSignSlot.FlexibleInd;
-
             }
  
             return Ok(rtnTimeslot);
@@ -738,21 +746,59 @@ namespace ComputerResetApi.Controllers
 
             return Content("The status of event " + eventId.ToString() + " has changed.");
         }
-        
+
+        [HttpPost("api/users")]
+        [SwaggerOperation(Summary = "Log into the system",
+        Description = "Takes Facebook token and converts to a JWT for our use.")]
+        public async Task<ActionResult<string>> UserLogin(UserSmall fbInfo)
+        {
+        //gets status flag of user and creates user record if not existing
+
+            //start off by verifying FB token from passed principal
+            string fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
+
+            string msToken = fbInfo.accessToken;
+            string jwt = string.Empty;
+
+            //call FB web service
+            if (fbInfo.facebookId == "997") {
+                //assume dev
+                return Ok(_userService.generateJwtToken(new UserSmall() {facebookId = "997"}));
+            }
+            else 
+            {
+                var client = _clientFactory.CreateClient();
+                using (var response = await client.GetAsync(fbUrl + msToken)) {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    dynamic fbRtn = JObject.Parse(apiResponse);
+
+                    if (fbRtn.id == null) {
+                        return Unauthorized("You are not logged in to Facebook.");
+                    }
+
+                    if (fbRtn.id.ToString() == fbInfo.facebookId) {
+                        //we are good, lets spit out the JWT
+                        return Ok(_userService.generateJwtToken(fbInfo));
+                    } 
+                    else 
+                    {
+                        //bad token, return nothing
+                        return Unauthorized("User information does not match what is passed from Facebook.");
+                    }
+                }
+            };
+
+        }
+
         [Authorize]
         [HttpPost("api/users/attrib")]
         [SwaggerOperation(Summary = "Gets or sets attributes of user.", 
         Description = "Gets the attributes of the user (banned, admin, volunteer), or creates the new user " +
-        "record if the user does not exist.")]
+        "record if the user does not exist. Also generates login token. Does not require auth " +
+        "but requires Facebook access token.")]
 
         public async Task<ActionResult<UserAttrib>> GetUserAttrib(UserSmall fbInfo)
         {
-            //gets status flag of user and creates user record if not existing
-
-            string msToken = Request.Headers["X-MS-TOKEN-FACEBOOK-ACCESS-TOKEN"];
-
-            Console.WriteLine(msToken); //for testing
-
             //do we have user with this id - ours?
             //test if user exists in table. if not, create.
             var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefaultAsync();

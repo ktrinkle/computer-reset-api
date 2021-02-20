@@ -14,9 +14,7 @@ namespace ComputerResetApi.Services
 {
     public interface IUserService
     {
-        AuthenticateResponse Authenticate(AuthenticateRequest model);
-        IEnumerable<User> GetAll();
-        User GetById(int id);
+        string generateJwtToken(UserSmall user);
     }
 
     public class UserService : IUserService
@@ -33,41 +31,20 @@ namespace ComputerResetApi.Services
         {
             _appSettings = appSettings.Value;
         }
-
-        public AuthenticateResponse Authenticate(AuthenticateRequest model)
+        
+        public string generateJwtToken(UserSmall user)
         {
-            var user = _users.SingleOrDefault(x => x.Username == model.Username && x.Password == model.Password);
-
-            // return null if user not found
-            if (user == null) return null;
-
-            // authentication successful so generate jwt token
-            var token = generateJwtToken(user);
-
-            return new AuthenticateResponse(user, token);
-        }
-
-        public IEnumerable<User> GetAll()
-        {
-            return _users;
-        }
-
-        public User GetById(int id)
-        {
-            return _users.FirstOrDefault(x => x.Id == id);
-        }
-
-        // helper methods
-
-        private string generateJwtToken(User user)
-        {
-            // generate token that is valid for 7 days
+            // generate token that is valid for 1 day
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Subject = new ClaimsIdentity(new[] { 
+                    new Claim("fbId", user.facebookId),
+                    new Claim("firstName", user.firstName),
+                    new Claim("lastName", user.lastName)
+                }),
+                Expires = DateTime.UtcNow.AddDays(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
