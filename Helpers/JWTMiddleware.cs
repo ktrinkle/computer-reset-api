@@ -49,7 +49,7 @@ namespace ComputerResetApi.Helpers
                 }, out SecurityToken validatedToken);
 
                 var jwtToken = (JwtSecurityToken)validatedToken;
-                var userId = int.Parse(jwtToken.Claims.First(x => x.Type == "fbId").Value);
+                var userId = jwtToken.Claims.First(x => x.Type == "fbId").Value;
 
                 // attach user to context on successful jwt validation
                 context.Items["User"] = new User() {

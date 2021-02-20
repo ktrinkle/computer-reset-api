@@ -136,7 +136,8 @@ namespace ComputerResetApi
 
             app.UseAuthorization();
 
-            app.UseCustomJwtMiddleware();
+            // custom jwt auth middleware
+            app.UseMiddleware<JwtMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {
