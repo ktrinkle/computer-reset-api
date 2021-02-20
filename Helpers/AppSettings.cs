@@ -8,5 +8,6 @@ namespace ComputerResetApi.Helpers
         public string SignupOpen{ get; set; }
         public int? AutoClear { get; set; }
         public string FacebookAuthUrl { get; set; }
+        public string DevUserId { get; set; }
     }
 }

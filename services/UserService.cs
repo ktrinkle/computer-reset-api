@@ -1,26 +1,23 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using ComputerResetApi.Entities;
 using ComputerResetApi.Helpers;
-using ComputerResetApi.Models;
+using ComputerResetApi.Entities;
 
 namespace ComputerResetApi.Services
 {
     public interface IUserService
     {
         string generateJwtToken(UserSmall user);
+        string getFbFromHeader(HttpContext context);
     }
 
     public class UserService : IUserService
     {
-        // users hardcoded for dev purposes, need to move to secrets or db
-
         private readonly AppSettings _appSettings;
 
         public UserService(IOptions<AppSettings> appSettings)
@@ -45,6 +42,12 @@ namespace ComputerResetApi.Services
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public string getFbFromHeader(HttpContext context)
+        {
+            User userContext = (User)context.Items["User"];
+            return userContext.fbId;
         }
     }
 }
