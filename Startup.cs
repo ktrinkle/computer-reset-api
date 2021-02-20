@@ -136,6 +136,8 @@ namespace ComputerResetApi
 
             app.UseAuthorization();
 
+            app.UseCustomJwtMiddleware();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
