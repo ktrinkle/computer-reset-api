@@ -35,7 +35,6 @@ namespace ComputerResetApi
         public string RealNm { get; set; }
         public bool? AdminFlag { get; set; }
         public bool? VolunteerFlag { get; set; }
-        public string jwt { get; set; }
      }
 
     public partial class UserManual

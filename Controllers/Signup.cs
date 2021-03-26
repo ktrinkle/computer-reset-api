@@ -12,7 +12,7 @@ using ComputerResetApi.Helpers;
 namespace ComputerResetApi.Controllers
 {
     [Authorize]
-    [Route("api/ComputerResetApi")] 
+    [Route("api/computerreset")] 
     [ApiController]
     public class SignupController : Controller
     {

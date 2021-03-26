@@ -7,16 +7,14 @@ using System.Threading.Tasks;
 using ComputerResetApi.Models;
 using System;
 using Swashbuckle.AspNetCore.Annotations;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
 using Newtonsoft.Json.Linq;
 using ComputerResetApi.Services;
-using ComputerResetApi.Entities;
 
 namespace ComputerResetApi.Controllers
 {
-    [Route("api/ComputerResetApi")] 
+    [Route("api/computerreset")] 
     [ApiController]
     public class UserController : Controller
     {
@@ -45,42 +43,50 @@ namespace ComputerResetApi.Controllers
         //gets status flag of user and creates user record if not existing
 
             //start off by verifying FB token from passed principal
-            string fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
+            string token = await GenerateUserToken(fbInfo);
 
-            string msToken = fbInfo.accessToken;
-            string jwt = string.Empty;
-
-            //call FB web service
-            if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
-                // hard coded for dev
-                return Ok(_userService.generateJwtToken(new UserSmall() {
-                    firstName = "Dev",
-                    lastName = "Mode",
-                    facebookId = _appSettings.Value.DevUserId}));
+            if (token == string.Empty) {
+                return Unauthorized("You are not permitted to access this site.");
+            } else {
+                return token;
             }
-            else 
-            {
-                var client = _clientFactory.CreateClient();
-                using (var response = await client.GetAsync(fbUrl + msToken)) {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    dynamic fbRtn = JObject.Parse(apiResponse);
 
-                    if (fbRtn.id == null) {
-                        return Unauthorized("You are not logged in to Facebook.");
-                    }
+        }
 
-                    if (fbRtn.id.ToString() == fbInfo.facebookId) {
-                        //we are good, lets spit out the JWT
-                        return Ok(_userService.generateJwtToken(fbInfo));
-                    } 
-                    else 
-                    {
-                        //bad token, return nothing
-                        return Unauthorized("User information does not match what is passed from Facebook.");
-                    }
-                }
-            };
+        [HttpPost("api/users/frontpage")]
+        [SwaggerOperation(Summary = "Big API for the front page of the site",
+            Description = "Returns all we need for the front page of the site.")]
+        public async Task<ActionResult<FrontPage>> GetFrontPage(UserSmall fbInfo) {
+            //check if bearer token exists since we call this again if frontpage refreshes
 
+            FrontPage returnData = new FrontPage();
+            string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+            if (token == string.Empty) {
+                token = await GenerateUserToken(fbInfo);
+            }
+
+            if (token == string.Empty) {
+                return Unauthorized(returnData);
+            } else {
+                returnData.SessionAuth = token;
+            }
+
+            // now we handle our normal user stuff
+            returnData.UserInfo = await GetUserAttribDetail(fbInfo);
+
+            // now we do the event stuff since we have a user
+
+            string facebookId = fbInfo.facebookId;
+
+            OpenEvent rtnTimeslot = await GetEventFrontPage(facebookId);
+            
+            returnData.FlexSlot = rtnTimeslot.FlexSlot;
+            returnData.MoveFlag = rtnTimeslot.MoveFlag;
+            returnData.SignedUpTimeslot = rtnTimeslot.SignedUpTimeslot;
+            returnData.Timeslot = rtnTimeslot.Timeslot;
+
+            return Ok(returnData);
         }
 
         [Authorize]
@@ -92,54 +98,7 @@ namespace ComputerResetApi.Controllers
 
         public async Task<ActionResult<UserAttrib>> GetUserAttrib(UserSmall fbInfo)
         {
-            //do we have user with this id - ours?
-            //test if user exists in table. if not, create.
-            var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefaultAsync();
-  
-            if (existUserTest == null) {
-                var newUser = new Users(){
-                    FbId = fbInfo.facebookId,
-                    FirstNm = fbInfo.firstName,
-                    LastNm = fbInfo.lastName,
-                    EventCnt = 0,
-                    LastLoginTms = DateTime.UtcNow
-                };
-
-                //auto-ban functionality based on Facebook name match.
-                var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.firstName && a.LastNm == fbInfo.lastName).FirstOrDefaultAsync();
-
-                if (prebanUser != null) {
-                    newUser.BanFlag = true;
-                }
-                
-                await _context.Users.AddAsync(newUser);
-                await _context.SaveChangesAsync();
-                
-                existUserTest = _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefault();
-            } else {
-                //update FB name if needed
-                if (existUserTest.FirstNm != fbInfo.firstName || existUserTest.LastNm != fbInfo.lastName) {
-                    existUserTest.FirstNm = fbInfo.firstName;
-                    existUserTest.LastNm = fbInfo.lastName;
-                }
-
-                //always update last login.
-                existUserTest.LastLoginTms = DateTime.UtcNow;
-                    
-                _context.Users.Update(existUserTest);
-                await _context.SaveChangesAsync();
-
-            }
-
-            UserAttrib existUser = new UserAttrib();
-            
-            existUser.CityNm = existUserTest.CityNm;
-            existUser.StateCd = existUserTest.StateCd;
-            existUser.RealNm = existUserTest.RealNm;
-            existUser.AdminFlag = existUserTest.AdminFlag;
-            existUser.VolunteerFlag = existUserTest.VolunteerFlag;
-
-            return existUser;
+            return await GetUserAttribDetail(fbInfo);
         }
 
         [Authorize]    
@@ -385,6 +344,139 @@ namespace ComputerResetApi.Controllers
             }).ToListAsync();
 
             return Ok(members);
+        }
+
+        [Authorize]
+        [HttpPost("api/users/addtoevent")]
+        [SwaggerOperation(Summary = "Add user to an event.", 
+            Description = "Allows admins to add any user to an event, bypassing checks.")]
+        public async Task<ObjectResult> SignupEvent(EventSignupCall signup)
+        {
+            int ourUserId;
+
+            //gets lookup of users for typeahead
+            if (!CheckAdmin()) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+
+            //run query to verify user can sign up - check the ban flag
+            var existUser = _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefault();
+
+            if (existUser == null) {
+                return BadRequest("I am sorry, you are not allowed to sign up for this event.");
+            } else {
+                ourUserId = existUser.Id;
+            }
+
+            //we passed all the checks, now lets do this thing. We don't assign an attendee number.
+            var newEventSignup = new EventSignup(){
+                TimeslotId = signup.eventId,
+                UserId = ourUserId,
+                SignupTms = DateTime.Now,
+                FlexibleInd = signup.flexibleInd
+            };
+
+            await _context.EventSignup.AddAsync(newEventSignup);
+            await _context.SaveChangesAsync();
+
+            //update user table since these are now in the form from earlier.
+ 
+            return Ok("The user has been added to the event.");
+        }
+
+
+        public async Task<string> GenerateUserToken(UserSmall fbInfo)
+        {
+        //gets status flag of user and creates user record if not existing
+
+            //start off by verifying FB token from passed principal
+            string fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
+
+            string msToken = fbInfo.accessToken;
+            string jwt = string.Empty;
+
+            //call FB web service
+            if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
+                // hard coded for dev
+                return _userService.generateJwtToken(new UserSmall() {
+                    firstName = "Dev",
+                    lastName = "Mode",
+                    facebookId = _appSettings.Value.DevUserId});
+            }
+            else 
+            {
+                var client = _clientFactory.CreateClient();
+                using (var response = await client.GetAsync(fbUrl + msToken)) {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    dynamic fbRtn = JObject.Parse(apiResponse);
+
+                    if (fbRtn.id == null) {
+                        return (string.Empty);
+                    }
+
+                    if (fbRtn.id.ToString() == fbInfo.facebookId) {
+                        //we are good, lets spit out the JWT
+                        return _userService.generateJwtToken(fbInfo);
+                    } 
+                    else 
+                    {
+                        //bad token, return nothing
+                        return (string.Empty);
+                    }
+                }
+            };
+
+        }
+
+        private async Task<UserAttrib> GetUserAttribDetail(UserSmall fbInfo) {
+            //do we have user with this id - ours?
+            //test if user exists in table. if not, create.
+            var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefaultAsync();
+  
+            if (existUserTest == null) {
+                var newUser = new Users(){
+                    FbId = fbInfo.facebookId,
+                    FirstNm = fbInfo.firstName,
+                    LastNm = fbInfo.lastName,
+                    EventCnt = 0,
+                    LastLoginTms = DateTime.UtcNow
+                };
+
+                //auto-ban functionality based on Facebook name match.
+                var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.firstName && a.LastNm == fbInfo.lastName).FirstOrDefaultAsync();
+
+                if (prebanUser != null) {
+                    newUser.BanFlag = true;
+                }
+                
+                await _context.Users.AddAsync(newUser);
+                await _context.SaveChangesAsync();
+                
+                existUserTest = _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefault();
+            } else {
+                //update FB name if needed
+                if (existUserTest.FirstNm != fbInfo.firstName || existUserTest.LastNm != fbInfo.lastName) {
+                    existUserTest.FirstNm = fbInfo.firstName;
+                    existUserTest.LastNm = fbInfo.lastName;
+                }
+
+                //always update last login.
+                existUserTest.LastLoginTms = DateTime.UtcNow;
+                    
+                _context.Users.Update(existUserTest);
+                await _context.SaveChangesAsync();
+
+            }
+
+            UserAttrib existUser = new UserAttrib();
+            
+            existUser.CityNm = existUserTest.CityNm;
+            existUser.StateCd = existUserTest.StateCd;
+            existUser.RealNm = existUserTest.RealNm;
+            existUser.AdminFlag = existUserTest.AdminFlag;
+            existUser.VolunteerFlag = existUserTest.VolunteerFlag;
+
+            return existUser;
         }
 
         private bool CheckAdmin() {
