@@ -54,6 +54,17 @@ namespace ComputerResetApi
 
     public partial class OpenEvent
     {
+        public string SessionAuth { get; set; }
+        public List<TimeslotLimited> Timeslot { get; set; }
+        public int? SignedUpTimeslot { get; set; }
+        public bool MoveFlag { get; set; }
+        public bool FlexSlot { get; set; }
+    } 
+
+    public partial class FrontPage
+    {
+        public string SessionAuth { get; set; }
+        public UserAttrib UserInfo { get; set; }
         public List<TimeslotLimited> Timeslot { get; set; }
         public int? SignedUpTimeslot { get; set; }
         public bool MoveFlag { get; set; }

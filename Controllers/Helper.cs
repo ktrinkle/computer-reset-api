@@ -11,7 +11,7 @@ using ComputerResetApi.Helpers;
 
 namespace ComputerResetApi.Controllers
 {
-    [Route("api/ComputerResetApi")] 
+    [Route("api/computerreset")] 
     [ApiController]
     public class HelperController : Controller
     {
