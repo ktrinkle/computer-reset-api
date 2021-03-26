@@ -23,6 +23,7 @@ namespace ComputerResetApi.Controllers
        private readonly IHttpClientFactory _clientFactory;
        private readonly IUserService _userService;
        private static readonly HttpClient _client = new HttpClient();
+       private static EventController _eventController;
 
         public UserController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings, 
@@ -79,7 +80,7 @@ namespace ComputerResetApi.Controllers
 
             string facebookId = fbInfo.facebookId;
 
-            OpenEvent rtnTimeslot = await GetEventFrontPage(facebookId);
+            OpenEvent rtnTimeslot = await _eventController.GetEventFrontPage(facebookId);
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
             returnData.MoveFlag = rtnTimeslot.MoveFlag;
