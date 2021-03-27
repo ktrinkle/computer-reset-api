@@ -5,13 +5,18 @@ using System.Threading.Tasks;
 using ComputerResetApi.Models;
 using System;
 
-namespace ComputerResetApi.Helpers
+namespace ComputerResetApi.Services
 {
-    public class EventHelper {
-
+    public interface IEventService
+    {
+        Task<OpenEvent> GetEventFrontPage(string facebookId);
+    }
+    
+    public class EventService : IEventService
+    {
         private readonly cr9525signupContext _context;
 
-        public EventHelper(cr9525signupContext context)
+        public EventService(cr9525signupContext context)
         {
             _context = context;
         }

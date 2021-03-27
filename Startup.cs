@@ -81,6 +81,7 @@ namespace ComputerResetApi
 
             // configure DI for application services
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IEventService, EventService>();
 
             //add UTC handling for dates in JSON
             //source: https://stackoverflow.com/questions/58102189/formatting-datetime-in-asp-net-core-3-0-using-system-text-json

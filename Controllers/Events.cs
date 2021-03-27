@@ -21,17 +21,17 @@ namespace ComputerResetApi.Controllers
        private readonly cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
        private readonly IUserService _userService;
-       private readonly EventHelper _eventHelper;
+       private readonly IEventService _eventService;
 
         public EventController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings,
             IUserService userService,
-            EventHelper eventHelper)
+            IEventService eventService)
         {
             _context = context;
             _appSettings = appSettings;
             _userService = userService;
-            _eventHelper = eventHelper;
+            _eventService = eventService;
         }
 
         [Authorize]
@@ -47,7 +47,7 @@ namespace ComputerResetApi.Controllers
 
             string facebookId = _userService.getFbFromHeader(HttpContext);
 
-            OpenEvent rtnTimeslot = await _eventHelper.GetEventFrontPage(facebookId);
+            OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(facebookId);
  
             return Ok(rtnTimeslot);
         }

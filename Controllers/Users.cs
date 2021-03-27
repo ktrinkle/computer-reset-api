@@ -23,19 +23,19 @@ namespace ComputerResetApi.Controllers
         private readonly IHttpClientFactory _clientFactory;
         private readonly IUserService _userService;
         private static readonly HttpClient _client = new HttpClient();
-        private readonly EventHelper _eventHelper;
+        private IEventService _eventService;
 
         public UserController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings, 
             IHttpClientFactory clientFactory,
             IUserService userService,
-            EventHelper eventHelper)
+            IEventService eventService)
         {
             _context = context;
             _appSettings = appSettings;
             _clientFactory = clientFactory;
             _userService = userService;
-            _eventHelper = eventHelper;
+            _eventService = eventService;
         }
 
         [HttpPost("api/users")]
@@ -65,11 +65,11 @@ namespace ComputerResetApi.Controllers
             FrontPage returnData = new FrontPage();
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
-            if (token == string.Empty) {
+            if (token == null) {
                 token = await GenerateUserToken(fbInfo);
             }
 
-            if (token == string.Empty) {
+            if (token == null) {
                 return Unauthorized(returnData);
             } else {
                 returnData.SessionAuth = token;
@@ -82,7 +82,7 @@ namespace ComputerResetApi.Controllers
 
             string facebookId = fbInfo.facebookId;
 
-            OpenEvent rtnTimeslot = await _eventHelper.GetEventFrontPage(facebookId);
+            OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(facebookId);
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
             returnData.MoveFlag = rtnTimeslot.MoveFlag;
@@ -414,7 +414,7 @@ namespace ComputerResetApi.Controllers
                     dynamic fbRtn = JObject.Parse(apiResponse);
 
                     if (fbRtn.id == null) {
-                        return (string.Empty);
+                        return (null);
                     }
 
                     if (fbRtn.id.ToString() == fbInfo.facebookId) {
