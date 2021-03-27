@@ -18,22 +18,24 @@ namespace ComputerResetApi.Controllers
     [ApiController]
     public class UserController : Controller
     {
-       private readonly cr9525signupContext _context;
-       private readonly IOptions<AppSettings> _appSettings;
-       private readonly IHttpClientFactory _clientFactory;
-       private readonly IUserService _userService;
-       private static readonly HttpClient _client = new HttpClient();
-       private static EventController _eventController;
+        private readonly cr9525signupContext _context;
+        private readonly IOptions<AppSettings> _appSettings;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly IUserService _userService;
+        private static readonly HttpClient _client = new HttpClient();
+        private readonly EventHelper _eventHelper;
 
         public UserController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings, 
             IHttpClientFactory clientFactory,
-            IUserService userService)
+            IUserService userService,
+            EventHelper eventHelper)
         {
             _context = context;
             _appSettings = appSettings;
             _clientFactory = clientFactory;
             _userService = userService;
+            _eventHelper = eventHelper;
         }
 
         [HttpPost("api/users")]
@@ -80,7 +82,7 @@ namespace ComputerResetApi.Controllers
 
             string facebookId = fbInfo.facebookId;
 
-            OpenEvent rtnTimeslot = await _eventController.GetEventFrontPage(facebookId);
+            OpenEvent rtnTimeslot = await _eventHelper.GetEventFrontPage(facebookId);
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
             returnData.MoveFlag = rtnTimeslot.MoveFlag;
