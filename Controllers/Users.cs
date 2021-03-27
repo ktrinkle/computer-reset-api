@@ -388,7 +388,7 @@ namespace ComputerResetApi.Controllers
         }
 
 
-        public async Task<string> GenerateUserToken(UserSmall fbInfo)
+        private async Task<string> GenerateUserToken(UserSmall fbInfo)
         {
         //gets status flag of user and creates user record if not existing
 
