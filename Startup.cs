@@ -74,8 +74,6 @@ namespace ComputerResetApi
 
             services.AddDbContext<cr9525signupContext>(options => options.UseNpgsql(postgresConn));
             
-            //NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
-       
             // configure strongly typed settings object
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
@@ -83,8 +81,8 @@ namespace ComputerResetApi
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEventService, EventService>();
 
-            //add UTC handling for dates in JSON
-            //source: https://stackoverflow.com/questions/58102189/formatting-datetime-in-asp-net-core-3-0-using-system-text-json
+            // add UTC handling for dates in JSON
+            // source: https://stackoverflow.com/questions/58102189/formatting-datetime-in-asp-net-core-3-0-using-system-text-json
             services.AddControllers()
                 .AddJsonOptions(options =>
                 {
