@@ -398,6 +398,8 @@ namespace ComputerResetApi.Controllers
             string msToken = fbInfo.accessToken;
             string jwt = string.Empty;
 
+            Console.WriteLine(_appSettings.Value.DevUserId);
+
             //call FB web service
             if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
                 // hard coded for dev
