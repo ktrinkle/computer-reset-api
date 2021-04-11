@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ using ComputerResetApi.Services;
 
 namespace ComputerResetApi.Controllers
 {
+    
     [Route("api/computerreset")] 
     [ApiController]
     [Authorize]
@@ -22,16 +24,19 @@ namespace ComputerResetApi.Controllers
        private readonly IOptions<AppSettings> _appSettings;
        private readonly IUserService _userService;
        private readonly IEventService _eventService;
+       private readonly ILogger<EventController> _logger;
 
         public EventController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings,
             IUserService userService,
-            IEventService eventService)
+            IEventService eventService,
+            ILogger<EventController> logger)
         {
             _context = context;
             _appSettings = appSettings;
             _userService = userService;
             _eventService = eventService;
+            _logger = logger;
         }
 
         [Authorize]
@@ -173,6 +178,7 @@ namespace ComputerResetApi.Controllers
 
             //Keyboard kid rule
             if (signup.realname.ToLower().IndexOf("lewellen") >= 0) {
+                _logger.LogInformation("Keyboard Kid rule activated");
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
@@ -185,6 +191,7 @@ namespace ComputerResetApi.Controllers
             var existUser = _context.Users.Where( a => a.FbId == signup.fbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
+                _logger.LogInformation("Banned user signup attempted" + signup.fbId);
                 return Content("I am sorry, you are not allowed to sign up for this event.");
             } else {
                 ourUserId = existUser.Id;

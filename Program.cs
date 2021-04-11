@@ -17,6 +17,7 @@ namespace ComputerResetApi
                 {
                     logging.ClearProviders();
                     logging.AddConsole();
+                    logging.AddApplicationInsights();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -24,18 +25,22 @@ namespace ComputerResetApi.Controllers
         private readonly IUserService _userService;
         private static readonly HttpClient _client = new HttpClient();
         private IEventService _eventService;
+        private readonly ILogger<UserController> _logger;
+
 
         public UserController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings, 
             IHttpClientFactory clientFactory,
             IUserService userService,
-            IEventService eventService)
+            IEventService eventService,
+            ILogger<UserController> logger)
         {
             _context = context;
             _appSettings = appSettings;
             _clientFactory = clientFactory;
             _userService = userService;
             _eventService = eventService;
+            _logger = logger;
         }
 
         [HttpPost("api/users")]
@@ -66,6 +71,7 @@ namespace ComputerResetApi.Controllers
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token == null) {
+                _logger.LogInformation(DateTime.Now.ToString() + " - calling GenerateUserToken");
                 token = await GenerateUserToken(fbInfo);
             }
 
@@ -76,13 +82,17 @@ namespace ComputerResetApi.Controllers
             }
 
             // now we handle our normal user stuff
+            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetUserAttribDetail");
             returnData.UserInfo = await GetUserAttribDetail(fbInfo);
+            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetUserAttribDetail");
 
             // now we do the event stuff since we have a user
 
             string facebookId = fbInfo.facebookId;
 
+            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetEventFrontPage");
             OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(facebookId);
+            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetEventFrontPage");
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
             returnData.MoveFlag = rtnTimeslot.MoveFlag;
@@ -263,14 +273,14 @@ namespace ComputerResetApi.Controllers
         [HttpPut("api/users/update/ban/{id}")]
         public async Task<ActionResult<string>> BanUserId(int id)
         {
-            //sets ban flag of user
-            //odds are pretty good we're not unbanning and we can do that in the DB
+            // sets ban flag of user
+            // odds are pretty good we're not unbanning and we can do that in the DB
 
             if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
-            //do we have user with this id - ours?
+            // do we have user with this id - ours?
             Users existUser = (from u in _context.Users 
             where u.Id == id
             select u).SingleOrDefault();
@@ -398,7 +408,8 @@ namespace ComputerResetApi.Controllers
             string msToken = fbInfo.accessToken;
             string jwt = string.Empty;
 
-            Console.WriteLine(_appSettings.Value.DevUserId);
+            _logger.LogInformation(_appSettings.Value.DevUserId);
+            _logger.LogInformation(DateTime.Now.ToString() + " - calling FB");
 
             //call FB web service
             if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
@@ -421,6 +432,7 @@ namespace ComputerResetApi.Controllers
 
                     if (fbRtn.id.ToString() == fbInfo.facebookId) {
                         //we are good, lets spit out the JWT
+                        Console.WriteLine(DateTime.Now.ToString() + " - generating JWT");
                         return _userService.generateJwtToken(fbInfo);
                     } 
                     else 
