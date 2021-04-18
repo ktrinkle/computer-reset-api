@@ -432,7 +432,7 @@ namespace ComputerResetApi.Controllers
 
                     if (fbRtn.id.ToString() == fbInfo.facebookId) {
                         //we are good, lets spit out the JWT
-                        Console.WriteLine(DateTime.Now.ToString() + " - generating JWT");
+                        _logger.LogInformation(DateTime.Now.ToString() + " - generating JWT");
                         return _userService.generateJwtToken(fbInfo);
                     } 
                     else 
