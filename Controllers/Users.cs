@@ -155,8 +155,8 @@ namespace ComputerResetApi.Controllers
             } else {
                 //update what we can
                 existUserTest.RealNm = fbInfo.RealNm;
-                existUserTest.CityNm = existUserTest.CityNm;
-                existUserTest.StateCd = existUserTest.StateCd;  
+                existUserTest.CityNm = fbInfo.CityNm;
+                existUserTest.StateCd = fbInfo.StateCd;  
 
                 _context.Users.Update(existUserTest);  
                 await _context.SaveChangesAsync();
