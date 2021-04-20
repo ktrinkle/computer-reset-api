@@ -30,4 +30,4 @@ There are none. Someday, maybe, I'll feel like it, but since the site is basical
 
 ## License
 
-This is licensed under the GPL v3 license.
+This is licensed under the MIT license.
