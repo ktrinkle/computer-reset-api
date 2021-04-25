@@ -17,12 +17,15 @@ namespace ComputerResetApi.Controllers
     {
        private readonly cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
+       private readonly UserController _userController;
 
         public HelperController(cr9525signupContext context, 
-            IOptions<AppSettings> appSettings)
+            IOptions<AppSettings> appSettings,
+            UserController userController)
         {
             _context = context;
             _appSettings = appSettings;
+            _userController = userController;
         }
 
         [Authorize]
@@ -50,6 +53,23 @@ namespace ComputerResetApi.Controllers
             }
 
             return Ok(signupOpen);
+        }
+
+        [Authorize]    
+        [HttpGet("api/helper/spiel")]
+
+        public async Task<ActionResult<string>> GetSpiel()
+        {
+            //gets lookup of users for typeahead
+            if (!_userController.CheckAdmin()) {
+                return Unauthorized("You are not permitted to use this function.");
+            } 
+
+            string spiel = await (from sp in _context.SpielData
+            orderby sp.EffDate descending
+            select sp.Spiel).FirstOrDefaultAsync();
+
+            return Ok(spiel);
         }
 
     }

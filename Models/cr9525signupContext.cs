@@ -26,9 +26,8 @@ namespace ComputerResetApi.Models
         public virtual DbSet<UsCities> UsCities { get; set; }
         public virtual DbSet<UsStates> UsStates { get; set; }
         public virtual DbSet<Users> Users { get; set; }
-
         public virtual DbSet<BanListText> BanListText { get; set; }
-
+        public virtual DbSet<SpielData> SpielData { get; set; }
         public DbSet<TimeslotLimited> TimeslotLimited { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -257,6 +256,20 @@ namespace ComputerResetApi.Models
                     .HasColumnName("comment_txt")
                     .HasMaxLength(200);
             });
+
+            modelBuilder.Entity<SpielData>(entity =>
+            {
+                entity.ToTable("spiel");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Spiel)
+                    .HasColumnName("spiel");
+
+                entity.Property(e => e.EffDate)
+                    .HasColumnName("eff_date");
+            });
+
 
             OnModelCreatingPartial(modelBuilder);
         }

@@ -49,5 +49,6 @@ namespace ComputerResetApi.Services
             User userContext = (User)context.Items["User"];
             return userContext.fbId;
         }
+        
     }
 }
