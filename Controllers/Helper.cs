@@ -8,6 +8,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using ComputerResetApi.Helpers;
+using ComputerResetApi.Services;
 
 namespace ComputerResetApi.Controllers
 {
@@ -17,15 +18,15 @@ namespace ComputerResetApi.Controllers
     {
        private readonly cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
-       private readonly UserController _userController;
+       private readonly IUserService _userService;
 
         public HelperController(cr9525signupContext context, 
             IOptions<AppSettings> appSettings,
-            UserController userController)
+            IUserService userService)
         {
             _context = context;
             _appSettings = appSettings;
-            _userController = userController;
+            _userService = userService;
         }
 
         [Authorize]
@@ -61,7 +62,7 @@ namespace ComputerResetApi.Controllers
         public async Task<ActionResult<string>> GetSpiel()
         {
             //gets lookup of users for typeahead
-            if (!_userController.CheckAdmin()) {
+            if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 
 
@@ -70,6 +71,13 @@ namespace ComputerResetApi.Controllers
             select sp.Spiel).FirstOrDefaultAsync();
 
             return Ok(spiel);
+        }
+
+        private bool CheckAdmin() {
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
+            .Select(a => a.AdminFlag).SingleOrDefault();
+
+            return adminCheck ?? false;
         }
 
     }
