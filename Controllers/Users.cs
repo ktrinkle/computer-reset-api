@@ -496,7 +496,7 @@ namespace ComputerResetApi.Controllers
             return existUser;
         }
 
-        private bool CheckAdmin() {
+        public bool CheckAdmin() {
             var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
