@@ -191,7 +191,7 @@ namespace ComputerResetApi.Controllers
             var existUser = _context.Users.Where( a => a.FbId == signup.fbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
-                _logger.LogInformation("Banned user signup attempted" + signup.fbId);
+                _logger.LogInformation("Banned user signup attempted - " + signup.fbId);
                 return Content("I am sorry, you are not allowed to sign up for this event.");
             } else {
                 ourUserId = existUser.Id;
