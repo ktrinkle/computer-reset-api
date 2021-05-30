@@ -1,14 +1,14 @@
-@import '~@angular/material/theming';
-@include mat-core();
+@use '~@angular/material' as mat;
+@include mat.core();
 
 /* ======== Angular material custom themes ======== */ 
-$cr-primary: mat-palette($mat-red);
-$cr-accent: mat-palette($mat-indigo, 100, 500, A100);
-$cr-warn: mat-palette($mat-pink);
+$cr-primary: mat.define-palette(mat.$red-palette);
+$cr-accent: mat.define-palette(mat.$indigo-palette, 100, 500, A100);
+$cr-warn: mat.define-palette(mat.$pink-palette);
 
-$cr-theme: mat-light-theme($cr-primary, $cr-accent, $cr-warn);
+$cr-theme: mat.define-light-theme($cr-primary, $cr-accent, $cr-warn);
 
-@include angular-material-theme($cr-theme);
+@include mat.all-component-themes($cr-theme);
 
 p {
   font-size: 115%;
