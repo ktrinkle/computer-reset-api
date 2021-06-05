@@ -9,5 +9,7 @@ namespace ComputerResetApi.Helpers
         public int? AutoClear { get; set; }
         public string FacebookAuthUrl { get; set; }
         public string DevUserId { get; set; }
+        public int? DumpsterCount { get; set; }
+        public int? DumpsterVolume { get; set; }
     }
 }
