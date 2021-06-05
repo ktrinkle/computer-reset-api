@@ -56,6 +56,18 @@ namespace ComputerResetApi.Controllers
             return Ok(signupOpen);
         }
 
+        [Authorize]
+        [HttpGet("api/ref/dumpster")]
+        public IActionResult getDumpsterCount() {
+            AppSettings appSettings = _appSettings.Value;
+            Dumpsters dumpsterReturn = new Dumpsters() {
+                DumpsterCount = appSettings.DumpsterCount ?? 0,
+                DumpsterVolume = appSettings.DumpsterVolume ?? 0
+            };
+
+            return Ok(dumpsterReturn);
+        }
+
         [Authorize]    
         [HttpGet("api/helper/spiel")]
 
