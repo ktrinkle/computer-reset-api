@@ -56,6 +56,7 @@ namespace ComputerResetApi.Controllers
             return Ok(signupOpen);
         }
 
+        [Authorize]
         [HttpGet("api/ref/dumpster")]
         public IActionResult getDumpsterCount() {
             AppSettings appSettings = _appSettings.Value;
