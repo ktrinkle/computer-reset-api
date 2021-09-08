@@ -23,10 +23,15 @@
     "@angular/platform-browser-dynamic": "^12.2.4",
     "@angular/router": "^12.2.4",
     "caller-path": "^3.0.1",
+    "css-what": "^5.0.1",
     "is-directory": "^0.3.1",
-    "object-path": "^0.11.5",
+    "jszip": "^3.7.1",
+    "object-path": "^0.11.7",
+    "path-parse": "^1.0.7",
     "rxjs": "~6.6.7",
     "tslib": "^2.0.0",
+    "url-parse": "^1.5.3",
+    "ws": "^6.2.2",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
@@ -47,6 +52,7 @@
     "protractor": "~7.0.0",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
-    "typescript": "~4.2.4"
+    "typescript": "~4.2.4",
+    "webpack-dev-server": "^3.11.2"
   }
 }
