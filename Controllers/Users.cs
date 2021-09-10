@@ -310,9 +310,19 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User ID not found");
             } 
             
-            existUser.BanFlag = existUser.BanFlag == true;
+            existUser.BanFlag = true;
             existUser.DeleteRequestedTms = DateTime.UtcNow;
 
+            var newBan = new BanListText() 
+            {
+                FirstNm = existUser.FirstNm,
+                LastNm = existUser.LastNm,
+                CityNm = existUser.CityNm,
+                StateCd = existUser.StateCd,
+                CommentTxt = "User requested deletion of data and is banned from CR."
+            };
+
+            await _context.BanListText.AddAsync(newBan);
             await _context.SaveChangesAsync();
 
             return Ok("You have requested deletion of your data. You have been removed from the Computer Reset signup system and do not have permission to sign up for an event.");
