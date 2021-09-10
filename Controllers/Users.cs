@@ -295,6 +295,29 @@ namespace ComputerResetApi.Controllers
             return Ok("The ban status of user " + id.ToString() + " has been changed.");
         }
 
+        [Authorize]
+        [HttpPut("api/users/requestDelete/{facebookId}")]
+        public async Task<ActionResult<string>> RequestDeleteUser(string facebookId)
+        {
+            // required for FB privacy policy. We also ban if this happens.
+
+            // do we have user with this id - ours?
+            Users existUser = await (from u in _context.Users 
+            where u.FbId == facebookId
+            select u).FirstOrDefaultAsync();
+
+            if (existUser is null) {
+                return NotFound("User ID not found");
+            } 
+            
+            existUser.BanFlag = existUser.BanFlag == true;
+            existUser.DeleteRequestedTms = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok("You have requested deletion of your data. You have been removed from the Computer Reset signup system and do not have permission to sign up for an event.");
+        }
+
         // PUT: api/users/volunteer
         // Flips flag on volunteer
         [Authorize]
