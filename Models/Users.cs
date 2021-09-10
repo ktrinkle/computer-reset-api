@@ -18,6 +18,9 @@ namespace ComputerResetApi
         public int? EventCnt { get; set; }
         public int? NoShowCnt { get; set; }
         public DateTime? LastLoginTms { get; set; }
+        public DateTime? DeleteRequestedTms { get; set; }
+        public bool? DeletedUser { get; set; }
+        public DateTime? DeleteCompleteTms { get; set; }
     }
 
     public partial class UserSmall

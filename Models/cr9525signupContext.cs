@@ -228,6 +228,15 @@ namespace ComputerResetApi.Models
 
                 entity.Property(e => e.LastLoginTms)
                     .HasColumnName("last_login_tms");
+
+               entity.Property(e => e.DeleteRequestedTms)
+                    .HasColumnName("delete_requested_tms");
+
+               entity.Property(e => e.DeletedUser)
+                    .HasColumnName("deleted_user");
+
+              entity.Property(e => e.DeleteCompleteTms)
+                    .HasColumnName("delete_complete_tms");
             });
 
             modelBuilder.Entity<BanListText>(entity =>
