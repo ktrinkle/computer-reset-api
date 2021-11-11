@@ -20,13 +20,13 @@ namespace ComputerResetApi.Controllers
     [Authorize]
     public class EventController : Controller
     {
-       private readonly cr9525signupContext _context;
+       private readonly Cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
        private readonly IUserService _userService;
        private readonly IEventService _eventService;
        private readonly ILogger<EventController> _logger;
 
-        public EventController(cr9525signupContext context, 
+        public EventController(Cr9525signupContext context, 
             IOptions<AppSettings> appSettings,
             IUserService userService,
             IEventService eventService,
@@ -50,7 +50,7 @@ namespace ComputerResetApi.Controllers
         {
             // set up our embedded return
 
-            string facebookId = _userService.getFbFromHeader(HttpContext);
+            string facebookId = _userService.GetFbFromHeader(HttpContext);
 
             OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(facebookId);
  
@@ -177,29 +177,31 @@ namespace ComputerResetApi.Controllers
             int autoClearLimit = autoclearSetting.AutoClear ?? 0;
 
             //Keyboard kid rule
-            if (signup.realname.ToLower().IndexOf("lewellen") >= 0) {
+            if (signup.Realname.ToLower().IndexOf("lewellen") >= 0) {
                 _logger.LogInformation("Keyboard Kid rule activated");
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
             //Grant rule
-            if ((signup.realname.ToLower() == "matthew kisha") && signup.firstNm != "Matthew" && signup.lastNm != "Kisha") {
+            if ((signup.Realname.ToLower() == "matthew kisha") && signup.FirstNm != "Matthew" && signup.LastNm != "Kisha") {
                 return Content("I'm sorry Dave. Only Matthew Kisha can sign up as Matthew Kisha. This is highly irregular.");
             }
 
             //run query to verify user can sign up - check the ban flag
-            var existUser = _context.Users.Where( a => a.FbId == signup.fbId && a.BanFlag == false).FirstOrDefault();
+            var existUser = _context.Users.Where( a => a.FbId == signup.FbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
-                _logger.LogInformation("Banned user signup attempted - " + signup.fbId);
+                _logger.LogInformation("Banned user signup attempted - " + signup.FbId);
                 return Content("I am sorry, you are not allowed to sign up for this event.");
             } else {
                 ourUserId = existUser.Id;
-                if (existUser.EventCnt < autoClearLimit) {
+                if (existUser.EventCnt < autoClearLimit && existUser.EventCnt > 0) {
                     autoClearInd = true;
                 }
             }
 
+            /*
+            Removed dupe event logic as we're back to allowing these
             var existUserEvent = (from e in _context.EventSignup
                                  join t in _context.Timeslot
                                  on e.TimeslotId equals t.Id
@@ -213,11 +215,12 @@ namespace ComputerResetApi.Controllers
                 return Content("It looks like you have already signed up for an open event. " +
                 "You may only sign up for one event per weekend.");
             }
+            */
 
             //check for event count - new per Raymond. Will run as final verification.
 
-            int currCount = _context.EventSignup.Where(m => m.DeleteInd == false).Count(m => m.TimeslotId == signup.eventId);
-            var eventStats = _context.Timeslot.Where(a => a.Id == signup.eventId)
+            int currCount = _context.EventSignup.Where(m => m.DeleteInd == false).Count(m => m.TimeslotId == signup.EventId);
+            var eventStats = _context.Timeslot.Where(a => a.Id == signup.EventId)
                 .FirstOrDefault();
 
             if (eventStats.EventClosed == true) {
@@ -233,17 +236,17 @@ namespace ComputerResetApi.Controllers
 
             //auto-clear functionality
             if (autoClearInd) {
-                newEventId = getSlotNumber(signup.eventId);
+                newEventId = GetSlotNumber(signup.EventId);
             } else {
                 newEventId = null;
             }
 
             //we passed all the checks, now lets do this thing.
             var newEventSignup = new EventSignup(){
-                TimeslotId = signup.eventId,
+                TimeslotId = signup.EventId,
                 UserId = ourUserId,
                 SignupTms = DateTime.Now,
-                FlexibleInd = signup.flexibleInd,
+                FlexibleInd = signup.FlexibleInd,
                 AttendNbr = newEventId
             };
 
@@ -252,19 +255,20 @@ namespace ComputerResetApi.Controllers
 
             //update user table since these are now in the form from earlier.
  
-            existUser.CityNm = signup.cityNm;
-            existUser.StateCd = signup.stateCd;
-            existUser.RealNm = signup.realname;
+            existUser.CityNm = signup.CityNm;
+            existUser.StateCd = signup.StateCd;
+            existUser.CountryCd = signup.CountryCd;
+            existUser.RealNm = signup.Realname;
             await _context.SaveChangesAsync();
 
             return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages and message requests for confirmation from the volunteers.");
         }
 
         [Authorize]
-        [HttpGet("api/events/signedup/dayof/{eventId}")]
+        [HttpGet("api/events/signedup/dayof/{EventId}")]
         [SwaggerOperation(Summary = "Gets all signed up users",
         Description = "Returns all folks signed up, excluding bans and those who have attended before")]
-        public IActionResult GetSignupConfirm(int eventId)
+        public IActionResult GetSignupConfirm(int EventId)
         {
             if (!CheckAdmin()) {
                 return Unauthorized();
@@ -273,7 +277,7 @@ namespace ComputerResetApi.Controllers
                 join users in _context.Users
                 on eventsignup.UserId equals users.Id
                 where users.BanFlag == false && eventsignup.AttendNbr != null 
-                && eventsignup.TimeslotId == eventId && eventsignup.DeleteInd == false
+                && eventsignup.TimeslotId == EventId && eventsignup.DeleteInd == false
                 orderby eventsignup.AttendNbr
                 select new {
                     eventsignup.Id,
@@ -298,8 +302,8 @@ namespace ComputerResetApi.Controllers
         // GET: api/events/signedup
         //returns all folks signed up, excluding bans and those who have attended before
         [Authorize]
-        [HttpGet("api/events/signedup/{eventId}")]
-        public IActionResult GetSignedUpMembers(int eventId)
+        [HttpGet("api/events/signedup/{EventId}")]
+        public IActionResult GetSignedUpMembers(int EventId)
         {
             if (!CheckAdmin()) {
                 return Unauthorized();
@@ -308,7 +312,7 @@ namespace ComputerResetApi.Controllers
                 join users in _context.Users
                 on eventsignup.UserId equals users.Id
                 where users.BanFlag == false
-                && eventsignup.TimeslotId == eventId && eventsignup.DeleteInd == false
+                && eventsignup.TimeslotId == EventId && eventsignup.DeleteInd == false
                 orderby users.EventCnt, eventsignup.SignupTms
                 select new {
                     eventsignup.Id,
@@ -572,8 +576,8 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/events/close/{eventId}")]
-        public async Task<ContentResult> CloseEvent(int eventId)
+        [HttpPut("api/events/close/{EventId}")]
+        public async Task<ContentResult> CloseEvent(int EventId)
         {
             //swaps open and closed status of event
 
@@ -582,7 +586,7 @@ namespace ComputerResetApi.Controllers
             } 
 
             Timeslot eventSlot = (from e in _context.Timeslot 
-            where e.Id == eventId
+            where e.Id == EventId
             select e).SingleOrDefault();
 
             if (eventSlot == null) {
@@ -592,13 +596,13 @@ namespace ComputerResetApi.Controllers
             eventSlot.EventClosed = eventSlot.EventClosed == true ? false : true;
             await _context.SaveChangesAsync();
 
-            return Content("The status of event " + eventId.ToString() + " has changed.");
+            return Content("The status of event " + EventId.ToString() + " has changed.");
         }
 
 
         [Authorize]
-        [HttpPut("api/events/private/{eventId}")]
-        public async Task<ContentResult> PrivateEventChange(int eventId)
+        [HttpPut("api/events/private/{EventId}")]
+        public async Task<ContentResult> PrivateEventChange(int EventId)
         {
             //swaps open and closed status of event
 
@@ -607,7 +611,7 @@ namespace ComputerResetApi.Controllers
             } 
 
             Timeslot eventSlot = (from e in _context.Timeslot 
-            where e.Id == eventId
+            where e.Id == EventId
             select e).SingleOrDefault();
 
             if (eventSlot == null) {
@@ -617,7 +621,31 @@ namespace ComputerResetApi.Controllers
             eventSlot.PrivateEventInd = eventSlot.PrivateEventInd == true ? false : true;
             await _context.SaveChangesAsync();
 
-            return Content("The status of event " + eventId.ToString() + " has changed.");
+            return Content("The status of event " + EventId.ToString() + " has changed.");
+        }
+
+        [Authorize]
+        [HttpPut("api/events/intl/{EventId}")]
+        public async Task<ContentResult> SetInternationalEventAsync(int EventId)
+        {
+            // swaps international status of event
+
+            if (!CheckAdmin()) {
+                return Content("You are not permitted to use this function.");
+            } 
+
+            Timeslot eventSlot = (from e in _context.Timeslot 
+            where e.Id == EventId
+            select e).SingleOrDefault();
+
+            if (eventSlot == null) {
+                return Content("Event ID not found");
+            } 
+            
+            eventSlot.IntlEventInd = eventSlot.IntlEventInd == true ? false : true;
+            await _context.SaveChangesAsync();
+
+            return Content("The status of event " + EventId.ToString() + " has changed.");
         }
 
         [Authorize]
@@ -658,7 +686,7 @@ namespace ComputerResetApi.Controllers
             eventUser.TimeslotId = newEventId;
 
             //get slot number from raw sql query - to code
-            var newSlotNbr = getSlotNumber(newEventId);
+            var newSlotNbr = GetSlotNumber(newEventId);
 
             //only set if we get a value back
             if (newSlotNbr != null) {
@@ -674,14 +702,14 @@ namespace ComputerResetApi.Controllers
         }
 
         private bool CheckAdmin() {
-            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.GetFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;
         }
 
-        private int? getSlotNumber(int newEventId) {
-            var newSlotNbr = (_context.EventSignup.FromSqlRaw(
+        private int? GetSlotNumber(int newEventId) {
+            var newSlotNbr = _context.EventSignup.FromSqlRaw(
                 "select min(generate_series) attend_nbr from ( " +
                 "select ats.timeslot_id, es.attend_nbr, ats.generate_series " +
                 "from event_signup es right outer join " +
@@ -690,11 +718,9 @@ namespace ComputerResetApi.Controllers
                 "and es.attend_nbr = ats.generate_series " +
                 "where es.attend_nbr is null " +
                 "and ats.timeslot_id = {0}) ts2", newEventId
-            ).Select(a => new {
-                AttendNbr = a.AttendNbr
-            })).FirstOrDefault(); 
+            ).Select(a => a.AttendNbr).FirstOrDefault(); 
 
-            return newSlotNbr.AttendNbr;
+            return newSlotNbr;
         }
     }
 }

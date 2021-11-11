@@ -10,6 +10,7 @@ namespace ComputerResetApi
         public string LastNm { get; set; }
         public string CityNm { get; set; }
         public string StateCd { get; set; }
+        public string CountryCd { get; set; }
         public string RealNm { get; set; }
         public string FbId { get; set; }
         public bool? BanFlag { get; set; }
@@ -25,10 +26,10 @@ namespace ComputerResetApi
 
     public partial class UserSmall
     {
-        public string firstName { get; set; }
-        public string lastName { get; set; }
-        public string facebookId { get; set; }
-        public string accessToken { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string FacebookId { get; set; }
+        public string AccessToken { get; set; }
     }
 
     public partial class UserAttrib
@@ -52,6 +53,6 @@ namespace ComputerResetApi
         public bool? BanFlag { get; set; }
         public bool? AdminFlag { get; set; }
         public bool? VolunteerFlag { get; set; }
-        public string facebookId { get; set; }
+        public string FacebookId { get; set; }
     }
 }

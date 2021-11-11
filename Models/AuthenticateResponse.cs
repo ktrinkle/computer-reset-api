@@ -13,9 +13,9 @@ namespace ComputerResetApi.Models
 
         public AuthenticateResponse(User user, string token)
         {
-            Id = user.fbId;
-            FirstName = user.firstName;
-            LastName = user.lastName;
+            Id = user.FbId;
+            FirstName = user.FirstName;
+            LastName = user.LastName;
         }
     }
 }

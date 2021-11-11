@@ -21,6 +21,6 @@ namespace ComputerResetApi
         public string CityNm { get; set; }
         public string StateCd { get; set; }
         public string CommentTxt { get; set; }
-        public string facebookId { get; set; }
+        public string FacebookId { get; set; }
     }
 }

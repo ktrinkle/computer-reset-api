@@ -22,17 +22,17 @@ namespace ComputerResetApi.Helpers
             _appSettings = appSettings.Value;
         }
 
-        public async Task Invoke(HttpContext context, IUserService userService)
+        public async Task Invoke(HttpContext context)
         {
             var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token != null)
-                attachUserToContext(context, userService, token);
+                AttachUserToContext(context, token);
 
             await _next(context);
         }
 
-        private void attachUserToContext(HttpContext context, IUserService userService, string token)
+        private void AttachUserToContext(HttpContext context, string token)
         {
             try
             {
@@ -53,9 +53,9 @@ namespace ComputerResetApi.Helpers
 
                 // attach user to context on successful jwt validation
                 context.Items["User"] = new User() {
-                    fbId = userId,
-                    firstName = jwtToken.Claims.First(x => x.Type == "firstName").Value,
-                    lastName = jwtToken.Claims.First(x => x.Type == "lastName").Value
+                    FbId = userId,
+                    FirstName = jwtToken.Claims.First(x => x.Type == "firstName").Value,
+                    LastName = jwtToken.Claims.First(x => x.Type == "lastName").Value
                 };
             }
             catch

@@ -19,16 +19,16 @@ namespace ComputerResetApi.Controllers
     [ApiController]
     public class UserController : Controller
     {
-        private readonly cr9525signupContext _context;
+        private readonly Cr9525signupContext _context;
         private readonly IOptions<AppSettings> _appSettings;
         private readonly IHttpClientFactory _clientFactory;
         private readonly IUserService _userService;
         private static readonly HttpClient _client = new HttpClient();
-        private IEventService _eventService;
+        private readonly IEventService _eventService;
         private readonly ILogger<UserController> _logger;
 
 
-        public UserController(cr9525signupContext context, 
+        public UserController(Cr9525signupContext context, 
             IOptions<AppSettings> appSettings, 
             IHttpClientFactory clientFactory,
             IUserService userService,
@@ -88,10 +88,10 @@ namespace ComputerResetApi.Controllers
 
             // now we do the event stuff since we have a user
 
-            string facebookId = fbInfo.facebookId;
+            string FacebookId = fbInfo.FacebookId;
 
             _logger.LogInformation(DateTime.Now.ToString() + " - calling GetEventFrontPage");
-            OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(facebookId);
+            OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(FacebookId);
             _logger.LogInformation(DateTime.Now.ToString() + " - finished GetEventFrontPage");
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
@@ -195,7 +195,7 @@ namespace ComputerResetApi.Controllers
                     BanFlag = a.BanFlag,
                     AdminFlag = a.AdminFlag,
                     VolunteerFlag = a.VolunteerFlag,
-                    facebookId = null
+                    FacebookId = null
                 }).ToListAsync();
 
             return Ok(userLookup);
@@ -296,14 +296,14 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpPut("api/users/requestDelete/{facebookId}")]
-        public async Task<ActionResult<string>> RequestDeleteUser(string facebookId)
+        [HttpPut("api/users/requestDelete/{FacebookId}")]
+        public async Task<ActionResult<string>> RequestDeleteUser(string FacebookId)
         {
             // required for FB privacy policy. We also ban if this happens.
 
             // do we have user with this id - ours?
             Users existUser = await (from u in _context.Users 
-            where u.FbId == facebookId
+            where u.FbId == FacebookId
             select u).FirstOrDefaultAsync();
 
             if (existUser is null) {
@@ -406,7 +406,7 @@ namespace ComputerResetApi.Controllers
             } 
 
             //run query to verify user can sign up - check the ban flag
-            var existUser = _context.Users.Where( a => a.FbId == signup.fbId).FirstOrDefault();
+            var existUser = _context.Users.Where( a => a.FbId == signup.FbId).FirstOrDefault();
 
             if (existUser == null) {
                 return BadRequest("I am sorry, you are not allowed to sign up for this event.");
@@ -416,10 +416,10 @@ namespace ComputerResetApi.Controllers
 
             //we passed all the checks, now lets do this thing. We don't assign an attendee number.
             var newEventSignup = new EventSignup(){
-                TimeslotId = signup.eventId,
+                TimeslotId = signup.EventId,
                 UserId = ourUserId,
                 SignupTms = DateTime.Now,
-                FlexibleInd = signup.flexibleInd
+                FlexibleInd = signup.FlexibleInd
             };
 
             await _context.EventSignup.AddAsync(newEventSignup);
@@ -436,21 +436,21 @@ namespace ComputerResetApi.Controllers
         //gets status flag of user and creates user record if not existing
 
             //start off by verifying FB token from passed principal
-            string fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
+            var fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
 
-            string msToken = fbInfo.accessToken;
-            string jwt = string.Empty;
+            var msToken = fbInfo.AccessToken;
+            var jwt = string.Empty;
 
             _logger.LogInformation(_appSettings.Value.DevUserId);
             _logger.LogInformation(DateTime.Now.ToString() + " - calling FB");
 
             //call FB web service
-            if (fbInfo.facebookId == _appSettings.Value.DevUserId) {
+            if (fbInfo.FacebookId == _appSettings.Value.DevUserId) {
                 // hard coded for dev
-                return _userService.generateJwtToken(new UserSmall() {
-                    firstName = "Dev",
-                    lastName = "Mode",
-                    facebookId = _appSettings.Value.DevUserId});
+                return _userService.GenerateJwtToken(new UserSmall() {
+                    FirstName = "Dev",
+                    LastName = "Mode",
+                    FacebookId = _appSettings.Value.DevUserId});
             }
             else 
             {
@@ -463,10 +463,10 @@ namespace ComputerResetApi.Controllers
                         return (null);
                     }
 
-                    if (fbRtn.id.ToString() == fbInfo.facebookId) {
+                    if (fbRtn.id.ToString() == fbInfo.FacebookId) {
                         //we are good, lets spit out the JWT
                         _logger.LogInformation(DateTime.Now.ToString() + " - generating JWT");
-                        return _userService.generateJwtToken(fbInfo);
+                        return _userService.GenerateJwtToken(fbInfo);
                     } 
                     else 
                     {
@@ -481,19 +481,19 @@ namespace ComputerResetApi.Controllers
         private async Task<UserAttrib> GetUserAttribDetail(UserSmall fbInfo) {
             //do we have user with this id - ours?
             //test if user exists in table. if not, create.
-            var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefaultAsync();
+            var existUserTest = await _context.Users.Where( a => a.FbId == fbInfo.FacebookId).FirstOrDefaultAsync();
   
             if (existUserTest == null) {
                 var newUser = new Users(){
-                    FbId = fbInfo.facebookId,
-                    FirstNm = fbInfo.firstName,
-                    LastNm = fbInfo.lastName,
+                    FbId = fbInfo.FacebookId,
+                    FirstNm = fbInfo.FirstName,
+                    LastNm = fbInfo.LastName,
                     EventCnt = 0,
                     LastLoginTms = DateTime.UtcNow
                 };
 
                 //auto-ban functionality based on Facebook name match.
-                var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.firstName && a.LastNm == fbInfo.lastName).FirstOrDefaultAsync();
+                var prebanUser = await _context.BanListText.Where( a=> a.FirstNm == fbInfo.FirstName && a.LastNm == fbInfo.LastName).FirstOrDefaultAsync();
 
                 if (prebanUser != null) {
                     newUser.BanFlag = true;
@@ -502,12 +502,12 @@ namespace ComputerResetApi.Controllers
                 await _context.Users.AddAsync(newUser);
                 await _context.SaveChangesAsync();
                 
-                existUserTest = _context.Users.Where( a => a.FbId == fbInfo.facebookId).FirstOrDefault();
+                existUserTest = _context.Users.Where( a => a.FbId == fbInfo.FacebookId).FirstOrDefault();
             } else {
                 //update FB name if needed
-                if (existUserTest.FirstNm != fbInfo.firstName || existUserTest.LastNm != fbInfo.lastName) {
-                    existUserTest.FirstNm = fbInfo.firstName;
-                    existUserTest.LastNm = fbInfo.lastName;
+                if (existUserTest.FirstNm != fbInfo.FirstName || existUserTest.LastNm != fbInfo.LastName) {
+                    existUserTest.FirstNm = fbInfo.FirstName;
+                    existUserTest.LastNm = fbInfo.LastName;
                 }
 
                 //always update last login.
@@ -518,19 +518,19 @@ namespace ComputerResetApi.Controllers
 
             }
 
-            UserAttrib existUser = new UserAttrib();
+            UserAttrib existUser = new UserAttrib() {
+                CityNm = existUserTest.CityNm,
+                StateCd = existUserTest.StateCd,
+                RealNm = existUserTest.RealNm,
+                AdminFlag = existUserTest.AdminFlag,
+                VolunteerFlag = existUserTest.VolunteerFlag
+            };
             
-            existUser.CityNm = existUserTest.CityNm;
-            existUser.StateCd = existUserTest.StateCd;
-            existUser.RealNm = existUserTest.RealNm;
-            existUser.AdminFlag = existUserTest.AdminFlag;
-            existUser.VolunteerFlag = existUserTest.VolunteerFlag;
-
             return existUser;
         }
 
         private bool CheckAdmin() {
-            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.GetFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;

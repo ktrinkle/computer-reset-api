@@ -12,8 +12,8 @@ namespace ComputerResetApi.Services
 {
     public interface IUserService
     {
-        string generateJwtToken(UserSmall user);
-        string getFbFromHeader(HttpContext context);
+        string GenerateJwtToken(UserSmall user);
+        string GetFbFromHeader(HttpContext context);
     }
 
     public class UserService : IUserService
@@ -25,7 +25,7 @@ namespace ComputerResetApi.Services
             _appSettings = appSettings.Value;
         }
         
-        public string generateJwtToken(UserSmall user)
+        public string GenerateJwtToken(UserSmall user)
         {
             // generate token that is valid for 1 day
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -33,9 +33,9 @@ namespace ComputerResetApi.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[] { 
-                    new Claim("fbId", user.facebookId),
-                    new Claim("firstName", user.firstName),
-                    new Claim("lastName", user.lastName)
+                    new Claim("fbId", user.FacebookId),
+                    new Claim("firstName", user.FirstName),
+                    new Claim("lastName", user.LastName)
                 }),
                 Expires = DateTime.UtcNow.AddDays(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -44,10 +44,10 @@ namespace ComputerResetApi.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public string getFbFromHeader(HttpContext context)
+        public string GetFbFromHeader(HttpContext context)
         {
             User userContext = (User)context.Items["User"];
-            return userContext.fbId;
+            return userContext.FbId;
         }
         
     }

@@ -16,10 +16,10 @@ namespace ComputerResetApi.Controllers
     [ApiController]
     public class SignupController : Controller
     {
-       private readonly cr9525signupContext _context;
+       private readonly Cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
 
-        public SignupController(cr9525signupContext context, 
+        public SignupController(Cr9525signupContext context, 
             IOptions<AppSettings> appSettings)
         {
             _context = context;

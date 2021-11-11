@@ -73,7 +73,7 @@ namespace ComputerResetApi
 
             string postgresConn = Configuration["ConnectionStrings:CRDatabase"];
 
-            services.AddDbContext<cr9525signupContext>(options => options.UseNpgsql(postgresConn));
+            services.AddDbContext<Cr9525signupContext>(options => options.UseNpgsql(postgresConn));
             
             // configure strongly typed settings object
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
