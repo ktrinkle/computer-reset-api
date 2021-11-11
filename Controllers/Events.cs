@@ -118,7 +118,7 @@ namespace ComputerResetApi.Controllers
 
             // do we have an event that already has this start date/time? if so, fail
             // we can have the same start and end time for domestic and international events
-            var existSession = await _context.Timeslot.Where(a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id && a.IntlEventInd != eventNew.IntlEventInd).ToListAsync();
+            var existSession = await _context.Timeslot.Where(a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id && a.IntlEventInd == eventNew.IntlEventInd).ToListAsync();
             if (existSession.Count() > 0) {
                 return Problem("There is already an event with this start date and time.");
             }
