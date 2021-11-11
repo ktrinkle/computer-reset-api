@@ -116,8 +116,9 @@ namespace ComputerResetApi.Controllers
                 return BadRequest("Events are limited to no more than the maximum signup count.");
             }
 
-            //do we have an event that already has this start date/time? if so, fail
-            var existSession = _context.Timeslot.Where( a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id ).ToList();
+            // do we have an event that already has this start date/time? if so, fail
+            // we can have the same start and end time for domestic and international events
+            var existSession = await _context.Timeslot.Where(a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id && a.IntlEventInd != eventNew.IntlEventInd).ToListAsync();
             if (existSession.Count() > 0) {
                 return Problem("There is already an event with this start date and time.");
             }
@@ -126,7 +127,7 @@ namespace ComputerResetApi.Controllers
 
             string message = "";
 
-            var oldSession = _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefault();
+            var oldSession = await _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefaultAsync();
 
             //Angular passes datetime as zulu timestamp. We need to tell Postgres this is the case.
 
@@ -153,7 +154,7 @@ namespace ComputerResetApi.Controllers
                     PrivateEventInd = eventNew.PrivateEventInd,
                     IntlEventInd = eventNew.IntlEventInd
                 };
-                await _context.Timeslot.AddAsync(newSession);
+                _context.Timeslot.Add(newSession);
                 message = "added.";
             }
             await _context.SaveChangesAsync();
