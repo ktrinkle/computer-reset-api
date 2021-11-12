@@ -134,8 +134,7 @@ namespace ComputerResetApi.Controllers
             if (existUserTest == null) {
                 var newUserSeq = await _context.Users.FromSqlRaw(
                     "select cast(nextVal('user_manual_seq') as varchar(50)) fb_id"
-                    ).Select(a => new {
-                    FbId = a.FbId}).FirstOrDefaultAsync();
+                    ).Select(a => new {a.FbId}).FirstOrDefaultAsync();
 
                 fbInfo.FbId = newUserSeq.FbId.ToString();
 
@@ -146,6 +145,7 @@ namespace ComputerResetApi.Controllers
                     RealNm = fbInfo.RealNm,
                     CityNm = fbInfo.CityNm,
                     StateCd = fbInfo.StateCd,
+                    CountryCd = fbInfo.C
                     EventCnt = 0
                 };
 
@@ -157,6 +157,7 @@ namespace ComputerResetApi.Controllers
                 existUserTest.RealNm = fbInfo.RealNm;
                 existUserTest.CityNm = fbInfo.CityNm;
                 existUserTest.StateCd = fbInfo.StateCd;  
+                existUserTest.CountryCd = fbInfo.CountryCd;
 
                 _context.Users.Update(existUserTest);  
                 await _context.SaveChangesAsync();
@@ -190,6 +191,7 @@ namespace ComputerResetApi.Controllers
                     LastNm = a.LastNm,
                     CityNm = a.CityNm,
                     StateCd = a.StateCd,
+                    CountryCd = a.CountryCd,
                     RealNm = a.RealNm,
                     FbId = a.FbId,
                     BanFlag = a.BanFlag,
@@ -521,6 +523,7 @@ namespace ComputerResetApi.Controllers
             UserAttrib existUser = new UserAttrib() {
                 CityNm = existUserTest.CityNm,
                 StateCd = existUserTest.StateCd,
+                CountryCd = existUserTest.CountryCd,
                 RealNm = existUserTest.RealNm,
                 AdminFlag = existUserTest.AdminFlag,
                 VolunteerFlag = existUserTest.VolunteerFlag

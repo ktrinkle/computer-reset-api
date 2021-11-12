@@ -291,6 +291,7 @@ namespace ComputerResetApi.Controllers
                     users.BanFlag,
                     users.CityNm,
                     users.StateCd,
+                    users.CountryCd,
                     eventsignup.ConfirmInd,
                     eventsignup.NoShowInd
                 };
@@ -323,6 +324,7 @@ namespace ComputerResetApi.Controllers
                     users.RealNm,
                     users.CityNm,
                     users.StateCd,
+                    users.CountryCd,
                     eventsignup.TimeslotId,
                     eventsignup.SignupTms,
                     eventsignup.AttendNbr,
@@ -376,6 +378,7 @@ namespace ComputerResetApi.Controllers
                         users.RealNm,
                         users.CityNm,
                         users.StateCd,
+                        users.CountryCd,
                         citylist.MetroplexInd,
                         eventsignup.TimeslotId,
                         slot.EventStartTms,
