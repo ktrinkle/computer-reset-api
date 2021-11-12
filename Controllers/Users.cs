@@ -145,7 +145,7 @@ namespace ComputerResetApi.Controllers
                     RealNm = fbInfo.RealNm,
                     CityNm = fbInfo.CityNm,
                     StateCd = fbInfo.StateCd,
-                    CountryCd = fbInfo.C
+                    CountryCd = fbInfo.CountryCd,
                     EventCnt = 0
                 };
 
