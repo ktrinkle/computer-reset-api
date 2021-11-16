@@ -4,21 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace ComputerResetApi.Models
 {
-    public partial class cr9525signupContext : DbContext
+    public partial class Cr9525signupContext : DbContext
     {
-        private readonly ILogger _logger;
-        public static readonly ILoggerFactory CrLoggerFactory = 
-            LoggerFactory.Create(builder => { builder.AddConsole(); });
-
-        public cr9525signupContext(ILogger<cr9525signupContext> logger)
+        public Cr9525signupContext()
         {
-            _logger = logger;
+
         }
 
-        public cr9525signupContext(DbContextOptions<cr9525signupContext> options, ILogger<cr9525signupContext> logger)
+        public Cr9525signupContext(DbContextOptions<Cr9525signupContext> options)
             : base(options)
         {
-             _logger = logger;
+
         }
 
         public virtual DbSet<EventSignup> EventSignup { get; set; }
@@ -29,6 +25,7 @@ namespace ComputerResetApi.Models
         public virtual DbSet<BanListText> BanListText { get; set; }
         public virtual DbSet<SpielData> SpielData { get; set; }
         public DbSet<TimeslotLimited> TimeslotLimited { get; set; }
+        public virtual DbSet<CountryCode> CountryCode { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -219,6 +216,10 @@ namespace ComputerResetApi.Models
                     .HasColumnName("state_cd")
                     .HasMaxLength(6);
 
+                entity.Property(e => e.CountryCd)
+                    .HasColumnName("country_cd")
+                    .HasMaxLength(6);
+
                 entity.Property(e => e.VolunteerFlag)
                     .HasColumnName("volunteer_flag")
                     .HasDefaultValueSql("false");
@@ -279,6 +280,24 @@ namespace ComputerResetApi.Models
                     .HasColumnName("eff_date");
             });
 
+            modelBuilder.Entity<CountryCode>(entity =>
+            {
+                entity.ToTable("country_code");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.CountryNm)
+                    .HasColumnName("country_nm")
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.CountryCd)
+                    .HasColumnName("country_cd")
+                    .HasMaxLength(2);
+
+                entity.Property(e => e.CountryCd3)
+                    .HasColumnName("country_cd_3")
+                    .HasMaxLength(3);
+            });
 
             OnModelCreatingPartial(modelBuilder);
         }

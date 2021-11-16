@@ -23,20 +23,21 @@ namespace ComputerResetApi
 
     public partial class EventSignupCall
     {
-        public string fbId { get; set; }
-        public int eventId { get; set; }
-        public string cityNm { get; set; }
-        public string stateCd { get; set; }
-        public string realname { get; set; }
-        public string firstNm { get; set; }
-        public string lastNm { get; set; }
-        public bool flexibleInd { get; set; }
+        public string FbId { get; set; }
+        public int EventId { get; set; }
+        public string CityNm { get; set; }
+        public string StateCd { get; set; }
+        public string CountryCd { get; set; }
+        public string Realname { get; set; }
+        public string FirstNm { get; set; }
+        public string LastNm { get; set; }
+        public bool FlexibleInd { get; set; }
     }
 
     public partial class EventSignupNote
     {
         public int Id { get; set; }
         public string SignupTxt { get; set; }
-        public string fbId { get; set; }
+        public string FbId { get; set; }
     }
 }

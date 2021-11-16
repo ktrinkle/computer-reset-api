@@ -80,7 +80,7 @@ namespace ComputerResetApi
         public bool? EventClosed { get; set; }
         public int? OverbookCnt { get; set; }
         public int? SignupCnt { get; set; }
-        public string facebookId { get; set; }
+        public string FacebookId { get; set; }
         public string EventNote { get; set; }
         public bool PrivateEventInd { get; set; }
         public bool? IntlEventInd { get; set; }

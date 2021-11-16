@@ -16,11 +16,11 @@ namespace ComputerResetApi.Controllers
     [ApiController]
     public class HelperController : Controller
     {
-       private readonly cr9525signupContext _context;
+       private readonly Cr9525signupContext _context;
        private readonly IOptions<AppSettings> _appSettings;
        private readonly IUserService _userService;
 
-        public HelperController(cr9525signupContext context, 
+        public HelperController(Cr9525signupContext context, 
             IOptions<AppSettings> appSettings,
             IUserService userService)
         {
@@ -37,6 +37,11 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
+        [HttpGet("api/ref/country")]
+        public async Task<ActionResult<IEnumerable<CountryCode>>> GetCountryCodeAsync()
+            => await _context.CountryCode.OrderBy(a => a.CountryNm).ToListAsync();
+
+        [Authorize]
         [HttpGet("api/ref/citylist/{id}")]
         public async Task<ActionResult<IEnumerable<UsCities>>> CityList(string id)
         {
@@ -45,7 +50,7 @@ namespace ComputerResetApi.Controllers
         }
 
         [HttpGet("api/siteup")]
-        public IActionResult checkIfOpen() {
+        public IActionResult CheckIfOpen() {
             var signupSetting = _appSettings.Value;
             string signupOpen = signupSetting.SignupOpen.ToString();
 
@@ -58,7 +63,7 @@ namespace ComputerResetApi.Controllers
 
         [Authorize]
         [HttpGet("api/ref/dumpster")]
-        public IActionResult getDumpsterCount() {
+        public IActionResult GetDumpsterCount() {
             AppSettings appSettings = _appSettings.Value;
             Dumpsters dumpsterReturn = new Dumpsters() {
                 DumpsterCount = appSettings.DumpsterCount ?? 0,
@@ -86,7 +91,7 @@ namespace ComputerResetApi.Controllers
         }
 
         private bool CheckAdmin() {
-            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.getFbFromHeader(HttpContext))
+            var adminCheck = _context.Users.Where(a=> a.FbId == _userService.GetFbFromHeader(HttpContext))
             .Select(a => a.AdminFlag).SingleOrDefault();
 
             return adminCheck ?? false;
