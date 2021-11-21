@@ -263,7 +263,7 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User ID not found");
             } 
             
-            existUser.AdminFlag = existUser.AdminFlag == true ? false : true;
+            existUser.AdminFlag = !existUser.AdminFlag;
             await _context.SaveChangesAsync();
 
             return Ok("User " + id.ToString() + " has been updated with the new admin status.");
@@ -291,7 +291,7 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User ID not found");
             } 
             
-            existUser.BanFlag = existUser.BanFlag == true ? false : true;
+            existUser.BanFlag = !existUser.BanFlag;
             await _context.SaveChangesAsync();
 
             return Ok("The ban status of user " + id.ToString() + " has been changed.");
@@ -350,7 +350,7 @@ namespace ComputerResetApi.Controllers
                 return NotFound("User ID not found");
             } 
             
-            existUser.VolunteerFlag = existUser.VolunteerFlag == true ? false : true;
+            existUser.VolunteerFlag = !existUser.VolunteerFlag;
             await _context.SaveChangesAsync();
 
             return Ok("User " + id.ToString() + " has been updated with the new volunteer status.");
@@ -441,7 +441,6 @@ namespace ComputerResetApi.Controllers
             var fbUrl = _appSettings.Value.FacebookAuthUrl.ToString();
 
             var msToken = fbInfo.AccessToken;
-            var jwt = string.Empty;
 
             _logger.LogInformation(_appSettings.Value.DevUserId);
             _logger.LogInformation(DateTime.Now.ToString() + " - calling FB");
