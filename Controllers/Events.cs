@@ -201,28 +201,20 @@ namespace ComputerResetApi.Controllers
                 }
             }
 
-            /*
-            Removed dupe event logic as we're back to allowing these
-            var existUserEvent = (from e in _context.EventSignup
-                                 join t in _context.Timeslot
-                                 on e.TimeslotId equals t.Id
-                                 where e.UserId == ourUserId
-                                 && t.EventOpenTms <= DateTime.UtcNow
-                                 && t.EventStartTms > DateTime.UtcNow
-                                 && e.DeleteInd == false
-                                 select new {e.Id}).Count();
+            // Don't allow signup if the user has signed up for this event already
+            var existUserEvent = await _context.EventSignup.AnyAsync(u => u.DeleteInd == false 
+                                                && u.TimeslotId == signup.EventId
+                                                && u.UserId == ourUserId);
 
-            if (existUserEvent > 0) {
-                return Content("It looks like you have already signed up for an open event. " +
-                "You may only sign up for one event per weekend.");
+            if (existUserEvent) {
+                return Content("It looks like you have already signed up for this event.");
             }
-            */
 
             //check for event count - new per Raymond. Will run as final verification.
 
-            int currCount = _context.EventSignup.Where(m => m.DeleteInd == false).Count(m => m.TimeslotId == signup.EventId);
-            var eventStats = _context.Timeslot.Where(a => a.Id == signup.EventId)
-                .FirstOrDefault();
+            int currCount = await _context.EventSignup.Where(m => m.DeleteInd == false).CountAsync(m => m.TimeslotId == signup.EventId);
+            var eventStats = await _context.Timeslot.Where(a => a.Id == signup.EventId)
+                .FirstOrDefaultAsync();
 
             if (eventStats.EventClosed == true) {
                 return Content("I am sorry, this event is full.");
@@ -251,7 +243,7 @@ namespace ComputerResetApi.Controllers
                 AttendNbr = newEventId
             };
 
-            await _context.EventSignup.AddAsync(newEventSignup);
+            _context.EventSignup.Add(newEventSignup);
             await _context.SaveChangesAsync();
 
             //update user table since these are now in the form from earlier.
@@ -597,7 +589,7 @@ namespace ComputerResetApi.Controllers
                 return Content("Event ID not found");
             } 
             
-            eventSlot.EventClosed = eventSlot.EventClosed == true ? false : true;
+            eventSlot.EventClosed = !eventSlot.EventClosed;
             await _context.SaveChangesAsync();
 
             return Content("The status of event " + EventId.ToString() + " has changed.");
@@ -622,7 +614,7 @@ namespace ComputerResetApi.Controllers
                 return Content("Event ID not found");
             } 
             
-            eventSlot.PrivateEventInd = eventSlot.PrivateEventInd == true ? false : true;
+            eventSlot.PrivateEventInd = !eventSlot.PrivateEventInd;
             await _context.SaveChangesAsync();
 
             return Content("The status of event " + EventId.ToString() + " has changed.");
@@ -646,7 +638,7 @@ namespace ComputerResetApi.Controllers
                 return Content("Event ID not found");
             } 
             
-            eventSlot.IntlEventInd = eventSlot.IntlEventInd == true ? false : true;
+            eventSlot.IntlEventInd = !eventSlot.IntlEventInd;
             await _context.SaveChangesAsync();
 
             return Content("The status of event " + EventId.ToString() + " has changed.");

@@ -17,13 +17,10 @@ namespace ComputerResetApi.Controllers
     public class SignupController : Controller
     {
        private readonly Cr9525signupContext _context;
-       private readonly IOptions<AppSettings> _appSettings;
 
-        public SignupController(Cr9525signupContext context, 
-            IOptions<AppSettings> appSettings)
+        public SignupController(Cr9525signupContext context)
         {
             _context = context;
-            _appSettings = appSettings;
         }
 
         [HttpPut("api/signup/move/{slotId}/{newEventId}/{facebookId}")]
