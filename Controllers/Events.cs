@@ -342,7 +342,7 @@ namespace ComputerResetApi.Controllers
             } else {
                 var slotmaster = await (_context.Timeslot.FromSqlRaw(
                     "select ts.id, ts.event_start_tms, ts.event_slot_cnt, " +
-                    "count(es.attend_nbr) signup_cnt from timeslot ts inner join event_signup es " +
+                    "count(es.attend_nbr) signup_cnt from timeslot ts left outer join event_signup es " +
                     "on ts.id = es.timeslot_id and (es.attend_nbr <= ts.event_slot_cnt or es.attend_nbr is null) " +
                     "where ts.event_start_tms >= now() group by ts.id, ts.event_start_tms, ts.event_slot_cnt " +
                     "order by ts.event_start_tms" 
