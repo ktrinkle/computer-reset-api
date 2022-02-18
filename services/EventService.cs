@@ -60,7 +60,8 @@ namespace ComputerResetApi.Services
                         es.AttendNbr,
                         es.ConfirmInd,
                         u.EventCnt,
-                        es.FlexibleInd
+                        es.FlexibleInd,
+                        u.CountryCd
                     }).ToListAsync();
 
             // default value - removing functionality for move
@@ -86,6 +87,8 @@ namespace ComputerResetApi.Services
                     }
                 }
 
+                var intlAttendee = !(userSignSlot?.CountryCd is null);
+
                 finalTimeslot.Add(new TimeslotLimited() {
                     Id = eventSlot.Id,
                     EventStartTms = eventSlot.EventStartTms,
@@ -93,7 +96,7 @@ namespace ComputerResetApi.Services
                     UserSlot = eventSlot.UserSlot,
                     EventClosed = eventSlot.EventClosed,
                     EventNote = eventSlot.EventNote,
-                    IntlEventInd = eventSlot.IntlEventInd,                    
+                    IntlEventInd = eventSlot.IntlEventInd == false ? intlAttendee : eventSlot.IntlEventInd,                    
                 });
 
             }

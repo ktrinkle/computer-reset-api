@@ -358,7 +358,8 @@ namespace ComputerResetApi.Controllers
                     join users in _context.Users
                     on eventsignup.UserId equals users.Id
                     join citylist in _context.UsCities
-                    on new {users.CityNm, users.StateCd} equals new {CityNm = citylist.City, citylist.StateCd}
+                    on new {users.CityNm, users.StateCd} equals new {CityNm = citylist.City, citylist.StateCd} into cityGroup
+                    from metroplexInd in cityGroup.DefaultIfEmpty()
                     where users.BanFlag == false && eventsignup.AttendNbr == null
                     && slot.EventStartTms >= DateTime.Now
                     && !eventsignup.DeleteInd
@@ -371,7 +372,7 @@ namespace ComputerResetApi.Controllers
                         users.CityNm,
                         users.StateCd,
                         users.CountryCd,
-                        citylist.MetroplexInd,
+                        metroplexInd.MetroplexInd,
                         eventsignup.TimeslotId,
                         slot.EventStartTms,
                         eventsignup.SignupTms,
@@ -381,7 +382,8 @@ namespace ComputerResetApi.Controllers
                         eventsignup.FlexibleInd
                     }).ToListAsync();
 
-                    //removed sort citylist.MetroplexInd descending, 2020-12-07
+                    // removed sort citylist.MetroplexInd descending, 2020-12-07
+                    // made Metroplex defaultIfEmpty for international use
 
                 var rtnArray = new {
                     slot = slotmaster,
