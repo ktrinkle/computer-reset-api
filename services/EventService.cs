@@ -87,7 +87,7 @@ namespace ComputerResetApi.Services
                     }
                 }
 
-                var intlAttendee = userSignSlot != null ? userSignSlot.CountryCd != "" : false; 
+                var intlAttendee = !(userSignSlot?.CountryCd is null);
 
                 finalTimeslot.Add(new TimeslotLimited() {
                     Id = eventSlot.Id,
