@@ -32,6 +32,7 @@ namespace ComputerResetApi
         public string FirstNm { get; set; }
         public string LastNm { get; set; }
         public bool FlexibleInd { get; set; }
+        public Guid EventKey { get; set; }
     }
 
     public partial class EventSignupNote

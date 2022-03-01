@@ -58,6 +58,24 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
+        [HttpGet("api/events/list/{eventKey}")]
+        [SwaggerOperation(Summary = "Get a private event and timeslot status.", 
+        Description = "Get the open timeslot the user signed up for and list of all open events. " +
+        " Does not return a value once an attendee number is assigned or events are closed." +
+        " Slots are returned to users that have attended only 0 or 1 times." +
+        " G = confirmed, S = signed up, C = waitlist, L = on the list")]
+        public async Task<ActionResult<OpenEvent>> GetPrivateEventWithSlot(Guid eventKey)
+        {
+            // set up our embedded return
+
+            string facebookId = _userService.GetFbFromHeader(HttpContext);
+
+            OpenEvent rtnTimeslot = await _eventService.GetPrivateEventPage(facebookId, eventKey);
+ 
+            return Ok(rtnTimeslot);
+        }
+
+        [Authorize]
         [HttpGet("api/events/show/upcoming")]
         [SwaggerOperation(Summary = "Show all upcoming events")]
         public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession()
@@ -152,7 +170,8 @@ namespace ComputerResetApi.Controllers
                     SignupCnt = eventNew.SignupCnt,
                     EventNote = eventNew.EventNote,
                     PrivateEventInd = eventNew.PrivateEventInd,
-                    IntlEventInd = eventNew.IntlEventInd
+                    IntlEventInd = eventNew.IntlEventInd,
+                    EventKey = new Guid()
                 };
                 _context.Timeslot.Add(newSession);
                 message = "added.";
@@ -177,18 +196,18 @@ namespace ComputerResetApi.Controllers
             var autoclearSetting = _appSettings.Value;
             int autoClearLimit = autoclearSetting.AutoClear ?? 0;
 
-            //Keyboard kid rule
+            // Keyboard kid rule
             if (signup.Realname.ToLower().IndexOf("lewellen") >= 0) {
                 _logger.LogInformation("Keyboard Kid rule activated");
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
-            //Grant rule
+            // Grant rule
             if ((signup.Realname.ToLower() == "matthew kisha") && signup.FirstNm != "Matthew" && signup.LastNm != "Kisha") {
                 return Content("I'm sorry Dave. Only Matthew Kisha can sign up as Matthew Kisha. This is highly irregular.");
             }
 
-            //run query to verify user can sign up - check the ban flag
+            // run query to verify user can sign up - check the ban flag
             var existUser = _context.Users.Where( a => a.FbId == signup.FbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
@@ -215,6 +234,12 @@ namespace ComputerResetApi.Controllers
             int currCount = await _context.EventSignup.Where(m => m.DeleteInd == false).CountAsync(m => m.TimeslotId == signup.EventId);
             var eventStats = await _context.Timeslot.Where(a => a.Id == signup.EventId)
                 .FirstOrDefaultAsync();
+
+            // If this event is private, check the GUID to see if it matches. If not, bounce away.
+            if (eventStats.EventKey != signup.EventKey && eventStats.PrivateEventInd)
+            {
+                return Content("I am unable to sign you up for this event.");
+            }
 
             if (eventStats.EventClosed == true) {
                 return Content("I am sorry, this event is full.");
