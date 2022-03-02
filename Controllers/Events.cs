@@ -153,7 +153,7 @@ namespace ComputerResetApi.Controllers
                     EventNote = eventNew.EventNote,
                     PrivateEventInd = eventNew.PrivateEventInd,
                     IntlEventInd = eventNew.IntlEventInd,
-                    EventKey = new Guid()
+                    EventKey = Guid.NewGuid()
                 };
                 _context.Timeslot.Add(newSession);
                 message = "added.";
@@ -218,7 +218,9 @@ namespace ComputerResetApi.Controllers
                 .FirstOrDefaultAsync();
 
             // If this event is private, check the GUID to see if it matches. If not, bounce away.
-            if (eventStats.EventKey != signup.EventKey && eventStats.PrivateEventInd)
+            var eventGuid = signup.EventKey != null ? new Guid(signup.EventKey) : new Guid();
+
+            if (eventStats.EventKey != eventGuid && signup.EventKey != null && eventStats.PrivateEventInd)
             {
                 return Content("I am unable to sign you up for this event.");
             }

@@ -132,7 +132,7 @@ namespace ComputerResetApi.Controllers
 
             // now we do the event stuff since we have a user
 
-            string FacebookId = fbInfo.FacebookId;
+            string facebookId = fbInfo.FacebookId;
 
             _logger.LogInformation(DateTime.Now.ToString() + " - calling GetEventFrontPage");
             OpenEvent rtnTimeslot = await _eventService.GetPrivateEventPage(facebookId, eventKey);
