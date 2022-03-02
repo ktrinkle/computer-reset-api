@@ -17,6 +17,7 @@ namespace ComputerResetApi
         public string EventNote { get; set; }
         public bool PrivateEventInd { get; set; }
         public bool? IntlEventInd { get; set; }
+        public Guid? EventKey { get; set; }
     }
 
     public partial class TimeslotLimited
@@ -35,7 +36,6 @@ namespace ComputerResetApi
         public string EventNote { get; set; }
         [Column("intleventind")]
         public bool? IntlEventInd { get; set; }
-
     }
 
      public partial class TimeslotLimitedDb

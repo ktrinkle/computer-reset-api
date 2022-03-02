@@ -126,6 +126,9 @@ namespace ComputerResetApi.Models
                     .HasDefaultValueSql("false")
                     .HasColumnName("intl_event_ind");
 
+                entity.Property(e => e.EventKey)
+                    .HasColumnName("event_key");
+
             });
 
             modelBuilder.Entity<UsCities>(entity =>

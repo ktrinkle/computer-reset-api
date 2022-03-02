@@ -152,7 +152,8 @@ namespace ComputerResetApi.Controllers
                     SignupCnt = eventNew.SignupCnt,
                     EventNote = eventNew.EventNote,
                     PrivateEventInd = eventNew.PrivateEventInd,
-                    IntlEventInd = eventNew.IntlEventInd
+                    IntlEventInd = eventNew.IntlEventInd,
+                    EventKey = Guid.NewGuid()
                 };
                 _context.Timeslot.Add(newSession);
                 message = "added.";
@@ -177,18 +178,18 @@ namespace ComputerResetApi.Controllers
             var autoclearSetting = _appSettings.Value;
             int autoClearLimit = autoclearSetting.AutoClear ?? 0;
 
-            //Keyboard kid rule
+            // Keyboard kid rule
             if (signup.Realname.ToLower().IndexOf("lewellen") >= 0) {
                 _logger.LogInformation("Keyboard Kid rule activated");
                 return Content("Your name is not allowed to sign up for an event.");
             }
 
-            //Grant rule
+            // Grant rule
             if ((signup.Realname.ToLower() == "matthew kisha") && signup.FirstNm != "Matthew" && signup.LastNm != "Kisha") {
                 return Content("I'm sorry Dave. Only Matthew Kisha can sign up as Matthew Kisha. This is highly irregular.");
             }
 
-            //run query to verify user can sign up - check the ban flag
+            // run query to verify user can sign up - check the ban flag
             var existUser = _context.Users.Where( a => a.FbId == signup.FbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
@@ -215,6 +216,14 @@ namespace ComputerResetApi.Controllers
             int currCount = await _context.EventSignup.Where(m => m.DeleteInd == false).CountAsync(m => m.TimeslotId == signup.EventId);
             var eventStats = await _context.Timeslot.Where(a => a.Id == signup.EventId)
                 .FirstOrDefaultAsync();
+
+            // If this event is private, check the GUID to see if it matches. If not, bounce away.
+            var eventGuid = signup.EventKey != null ? new Guid(signup.EventKey) : new Guid();
+
+            if (eventStats.EventKey != eventGuid && signup.EventKey != null && eventStats.PrivateEventInd)
+            {
+                return Content("I am unable to sign you up for this event.");
+            }
 
             if (eventStats.EventClosed == true) {
                 return Content("I am sorry, this event is full.");
