@@ -58,24 +58,6 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("api/events/list/{eventKey}")]
-        [SwaggerOperation(Summary = "Get a private event and timeslot status.", 
-        Description = "Get the open timeslot the user signed up for and list of all open events. " +
-        " Does not return a value once an attendee number is assigned or events are closed." +
-        " Slots are returned to users that have attended only 0 or 1 times." +
-        " G = confirmed, S = signed up, C = waitlist, L = on the list")]
-        public async Task<ActionResult<OpenEvent>> GetPrivateEventWithSlot(Guid eventKey)
-        {
-            // set up our embedded return
-
-            string facebookId = _userService.GetFbFromHeader(HttpContext);
-
-            OpenEvent rtnTimeslot = await _eventService.GetPrivateEventPage(facebookId, eventKey);
- 
-            return Ok(rtnTimeslot);
-        }
-
-        [Authorize]
         [HttpGet("api/events/show/upcoming")]
         [SwaggerOperation(Summary = "Show all upcoming events")]
         public async Task<ActionResult<IEnumerable<Timeslot>>> ShowUpcomingSession()

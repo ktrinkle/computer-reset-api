@@ -103,6 +103,50 @@ namespace ComputerResetApi.Controllers
         }
 
         [Authorize]
+        [HttpPut("api/users/privateEvent/{eventKey}")]
+        [SwaggerOperation(Summary = "Get a private event and timeslot status.", 
+        Description = "Get the open timeslot the user signed up for and list of all open events. " +
+        " Does not return a value once an attendee number is assigned or events are closed." +
+        " Slots are returned to users that have attended only 0 or 1 times." +
+        " G = confirmed, S = signed up, C = waitlist, L = on the list")]
+        public async Task<ActionResult<OpenEvent>> GetPrivateEventWithSlot(UserSmall fbInfo, Guid eventKey)
+        {
+            FrontPage returnData = new FrontPage();
+            string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+            if (token == null) {
+                _logger.LogInformation(DateTime.Now.ToString() + " - calling GenerateUserToken");
+                token = await GenerateUserToken(fbInfo);
+            }
+
+            if (token == null) {
+                return Unauthorized(returnData);
+            } else {
+                returnData.SessionAuth = token;
+            }
+
+            // now we handle our normal user stuff
+            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetUserAttribDetail");
+            returnData.UserInfo = await GetUserAttribDetail(fbInfo);
+            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetUserAttribDetail");
+
+            // now we do the event stuff since we have a user
+
+            string FacebookId = fbInfo.FacebookId;
+
+            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetEventFrontPage");
+            OpenEvent rtnTimeslot = await _eventService.GetPrivateEventPage(facebookId, eventKey);
+            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetEventFrontPage");
+            
+            returnData.FlexSlot = rtnTimeslot.FlexSlot;
+            returnData.MoveFlag = rtnTimeslot.MoveFlag;
+            returnData.SignedUpTimeslot = rtnTimeslot.SignedUpTimeslot;
+            returnData.Timeslot = rtnTimeslot.Timeslot;
+
+            return Ok(returnData);
+        }
+
+        [Authorize]
         [HttpPost("api/users/attrib")]
         [SwaggerOperation(Summary = "Gets or sets attributes of user.", 
         Description = "Gets the attributes of the user (banned, admin, volunteer), or creates the new user " +
