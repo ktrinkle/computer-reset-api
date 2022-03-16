@@ -372,7 +372,7 @@ namespace ComputerResetApi.Controllers
                     where users.BanFlag == false && eventsignup.AttendNbr == null
                     && slot.EventStartTms >= DateTime.Now
                     && !eventsignup.DeleteInd
-                    orderby users.NoShowCnt, users.EventCnt, eventsignup.SignupTms
+                    orderby users.NoShowCnt descending, users.EventCnt, eventsignup.SignupTms
                     select new { 
                         eventsignup.Id,
                         users.FirstNm,
