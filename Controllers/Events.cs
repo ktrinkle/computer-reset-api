@@ -243,6 +243,18 @@ namespace ComputerResetApi.Controllers
                 newEventId = null;
             }
 
+            // autoclear
+            var returnMessage = "";
+            if (newEventId is null)
+            {
+                returnMessage = "We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages and message requests for confirmation from the volunteers.";
+            }
+            else
+            {
+                returnMessage = "You are confirmed for this event and will not hear from the volunteers. If you need to cancel, please contact Raymond Jett or Kevin Trinkle via Facebook Messenger.";
+            }
+
+
             //we passed all the checks, now lets do this thing.
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.EventId,
@@ -263,7 +275,7 @@ namespace ComputerResetApi.Controllers
             existUser.RealNm = signup.Realname;
             await _context.SaveChangesAsync();
 
-            return Content("We have received your signup. Since we need to verify that you can attend the sale, please check your Facebook messages and message requests for confirmation from the volunteers.");
+            return Content(returnMessage);
         }
 
         [Authorize]
