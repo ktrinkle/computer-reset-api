@@ -23,8 +23,8 @@ namespace ComputerResetApi.Services
         }
 
         public async Task<OpenEvent> GetEventFrontPage(string facebookId) {
-            List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
-            OpenEvent rtnTimeslot = new OpenEvent();
+            var finalTimeslot = new List<TimeslotLimited>();
+            var rtnTimeslot = new OpenEvent();
             DateTime limitTime = DateTime.UtcNow.AddHours(1);
 
             var openSlot = await(from t in _context.Timeslot
@@ -88,7 +88,7 @@ namespace ComputerResetApi.Services
                     }
                 }
 
-                var intlAttendee = !(userSignSlot?.CountryCd is null);
+                var intlAttendee = userSignSlot?.CountryCd is not null;
 
                 finalTimeslot.Add(new TimeslotLimited() {
                     Id = eventSlot.Id,
@@ -111,8 +111,8 @@ namespace ComputerResetApi.Services
         // This is very quick and dirty and in an ideal world would be refactored
         // But since it's a month until the end...
         public async Task<OpenEvent> GetPrivateEventPage(string facebookId, Guid eventKey) {
-            List<TimeslotLimited> finalTimeslot = new List<TimeslotLimited>();
-            OpenEvent rtnTimeslot = new OpenEvent();
+            var finalTimeslot = new List<TimeslotLimited>();
+            var rtnTimeslot = new OpenEvent();
             DateTime limitTime = DateTime.UtcNow.AddHours(1);
 
             var openSlot = await(from t in _context.Timeslot

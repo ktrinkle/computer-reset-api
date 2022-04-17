@@ -65,7 +65,7 @@ namespace ComputerResetApi.Controllers
             if (!CheckAdmin()) {
                 return null;
             } else {
-                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today 
+                return await _context.Timeslot.Where(a => a.EventStartTms >= DateTime.Today.ToUniversalTime() 
                 ).OrderBy(a => a.EventStartTms).ToListAsync();
             }
         }
@@ -104,7 +104,7 @@ namespace ComputerResetApi.Controllers
                 return BadRequest("You cannot have an event open after it starts. Please try again.");
             }
 
-            if ((eventNew.EventEndTms <= DateTime.Now) || (DateTime.Now >= eventNew.EventStartTms)) {
+            if ((eventNew.EventEndTms <= DateTime.UtcNow) || (DateTime.UtcNow >= eventNew.EventStartTms)) {
                 return BadRequest("You cannot create an event in the past.");
             }
 
@@ -118,8 +118,9 @@ namespace ComputerResetApi.Controllers
 
             // do we have an event that already has this start date/time? if so, fail
             // we can have the same start and end time for domestic and international events
-            var existSession = await _context.Timeslot.Where(a => a.EventStartTms == eventNew.EventStartTms && a.Id != eventNew.Id && a.IntlEventInd == eventNew.IntlEventInd).ToListAsync();
-            if (existSession.Count() > 0) {
+            var startTms = DateTime.SpecifyKind(eventNew.EventStartTms, DateTimeKind.Utc);
+            var existSession = await _context.Timeslot.Where(a => a.EventStartTms == startTms && a.Id != eventNew.Id && a.IntlEventInd == eventNew.IntlEventInd).ToListAsync();
+            if (existSession.Count > 0) {
                 return Problem("There is already an event with this start date and time.");
             }
 
@@ -129,7 +130,7 @@ namespace ComputerResetApi.Controllers
 
             var oldSession = await _context.Timeslot.Where( a => a.Id == eventNew.Id).FirstOrDefaultAsync();
 
-            //Angular passes datetime as zulu timestamp. We need to tell Postgres this is the case.
+            // Angular passes datetime as zulu timestamp. We need to tell Postgres this is the case.
 
             if (oldSession != null) {
                 oldSession.EventStartTms = DateTime.SpecifyKind(eventNew.EventStartTms, DateTimeKind.Utc);
@@ -172,14 +173,14 @@ namespace ComputerResetApi.Controllers
         {
             int ourUserId;
             int? newEventId;
-            bool autoClearInd = false;
 
             //Get auto-clear flag
             var autoclearSetting = _appSettings.Value;
             int autoClearLimit = autoclearSetting.AutoClear ?? 0;
+            bool autoClearInd = autoClearLimit > 0;
 
             // Keyboard kid rule
-            if (signup.Realname.ToLower().IndexOf("lewellen") >= 0) {
+            if (signup.Realname.ToLower().Contains("lewellen")) {
                 _logger.LogInformation("Keyboard Kid rule activated");
                 return Content("Your name is not allowed to sign up for an event.");
             }
@@ -189,7 +190,7 @@ namespace ComputerResetApi.Controllers
                 return Content("I'm sorry Dave. Only Matthew Kisha can sign up as Matthew Kisha. This is highly irregular.");
             }
 
-            // run query to verify user can sign up - check the ban flag
+            // run query to verify user can sign up - check the ban flag and no-show
             var existUser = _context.Users.Where( a => a.FbId == signup.FbId && a.BanFlag == false).FirstOrDefault();
 
             if (existUser == null) {
@@ -236,8 +237,9 @@ namespace ComputerResetApi.Controllers
                 return Content("I'm sorry, but this event has filled up. Please select another event.");
             }
 
-            //auto-clear functionality
-            if (autoClearInd) {
+            // auto-clear functionality.
+            // Only run if user has no no-shows and is below limit.
+            if (autoClearInd && existUser.NoShowCnt is null && existUser.EventCnt < autoClearLimit) {
                 newEventId = GetSlotNumber(signup.EventId);
             } else {
                 newEventId = null;
@@ -245,9 +247,11 @@ namespace ComputerResetApi.Controllers
 
             // autoclear
             var returnMessage = "";
-            if (!(newEventId is null))
+            var confirmInd = false;
+            if (newEventId is not null)
             {
                 returnMessage = "You are confirmed for this event and will not hear from the volunteers. If you need to cancel, please contact Raymond Jett or Kevin Trinkle via Facebook Messenger.";
+                confirmInd = true;
             }
             else
             {
@@ -259,9 +263,10 @@ namespace ComputerResetApi.Controllers
             var newEventSignup = new EventSignup(){
                 TimeslotId = signup.EventId,
                 UserId = ourUserId,
-                SignupTms = DateTime.Now,
+                SignupTms = DateTime.UtcNow,
                 FlexibleInd = signup.FlexibleInd,
-                AttendNbr = newEventId
+                AttendNbr = newEventId,
+                ConfirmInd = confirmInd
             };
 
             _context.EventSignup.Add(newEventSignup);
@@ -382,7 +387,7 @@ namespace ComputerResetApi.Controllers
                     on new {users.CityNm, users.StateCd} equals new {CityNm = citylist.City, citylist.StateCd} into cityGroup
                     from metroplexInd in cityGroup.DefaultIfEmpty()
                     where users.BanFlag == false && eventsignup.AttendNbr == null
-                    && slot.EventStartTms >= DateTime.Now
+                    && slot.EventStartTms >= DateTime.UtcNow
                     && !eventsignup.DeleteInd
                     orderby users.NoShowCnt descending, users.EventCnt, eventsignup.SignupTms
                     select new { 

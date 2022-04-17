@@ -23,7 +23,7 @@ namespace ComputerResetApi.Controllers
         private readonly IOptions<AppSettings> _appSettings;
         private readonly IHttpClientFactory _clientFactory;
         private readonly IUserService _userService;
-        private static readonly HttpClient _client = new HttpClient();
+        private static readonly HttpClient _client = new ();
         private readonly IEventService _eventService;
         private readonly ILogger<UserController> _logger;
 
@@ -67,7 +67,7 @@ namespace ComputerResetApi.Controllers
         public async Task<ActionResult<FrontPage>> GetFrontPage(UserSmall fbInfo) {
             //check if bearer token exists since we call this again if frontpage refreshes
 
-            FrontPage returnData = new FrontPage();
+            FrontPage returnData = new ();
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token == null) {
@@ -111,7 +111,7 @@ namespace ComputerResetApi.Controllers
         " G = confirmed, S = signed up, C = waitlist, L = on the list")]
         public async Task<ActionResult<OpenEvent>> GetPrivateEventWithSlot(UserSmall fbInfo, Guid eventKey)
         {
-            FrontPage returnData = new FrontPage();
+            FrontPage returnData = new ();
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token == null) {
@@ -563,7 +563,7 @@ namespace ComputerResetApi.Controllers
 
             }
 
-            UserAttrib existUser = new UserAttrib() {
+            var existUser = new UserAttrib() {
                 CityNm = existUserTest.CityNm,
                 StateCd = existUserTest.StateCd,
                 CountryCd = existUserTest.CountryCd,
