@@ -23,7 +23,7 @@ namespace ComputerResetApi.Controllers
         private readonly IOptions<AppSettings> _appSettings;
         private readonly IHttpClientFactory _clientFactory;
         private readonly IUserService _userService;
-        private static readonly HttpClient _client = new HttpClient();
+        private static readonly HttpClient _client = new ();
         private readonly IEventService _eventService;
         private readonly ILogger<UserController> _logger;
 
@@ -67,11 +67,11 @@ namespace ComputerResetApi.Controllers
         public async Task<ActionResult<FrontPage>> GetFrontPage(UserSmall fbInfo) {
             //check if bearer token exists since we call this again if frontpage refreshes
 
-            FrontPage returnData = new FrontPage();
+            FrontPage returnData = new ();
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token == null) {
-                _logger.LogInformation(DateTime.Now.ToString() + " - calling GenerateUserToken");
+                _logger.LogInformation(DateTime.UtcNow.ToString() + " - calling GenerateUserToken");
                 token = await GenerateUserToken(fbInfo);
             }
 
@@ -82,17 +82,17 @@ namespace ComputerResetApi.Controllers
             }
 
             // now we handle our normal user stuff
-            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetUserAttribDetail");
+            _logger.LogInformation(DateTime.UtcNow.ToString() + " - calling GetUserAttribDetail");
             returnData.UserInfo = await GetUserAttribDetail(fbInfo);
-            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetUserAttribDetail");
+            _logger.LogInformation(DateTime.UtcNow.ToString() + " - finished GetUserAttribDetail");
 
             // now we do the event stuff since we have a user
 
             string FacebookId = fbInfo.FacebookId;
 
-            _logger.LogInformation(DateTime.Now.ToString() + " - calling GetEventFrontPage");
+            _logger.LogInformation(DateTime.UtcNow.ToString() + " - calling GetEventFrontPage");
             OpenEvent rtnTimeslot = await _eventService.GetEventFrontPage(FacebookId);
-            _logger.LogInformation(DateTime.Now.ToString() + " - finished GetEventFrontPage");
+            _logger.LogInformation(DateTime.UtcNow.ToString() + " - finished GetEventFrontPage");
             
             returnData.FlexSlot = rtnTimeslot.FlexSlot;
             returnData.MoveFlag = rtnTimeslot.MoveFlag;
@@ -111,7 +111,7 @@ namespace ComputerResetApi.Controllers
         " G = confirmed, S = signed up, C = waitlist, L = on the list")]
         public async Task<ActionResult<OpenEvent>> GetPrivateEventWithSlot(UserSmall fbInfo, Guid eventKey)
         {
-            FrontPage returnData = new FrontPage();
+            FrontPage returnData = new ();
             string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token == null) {
@@ -534,7 +534,7 @@ namespace ComputerResetApi.Controllers
                     FirstNm = fbInfo.FirstName,
                     LastNm = fbInfo.LastName,
                     EventCnt = 0,
-                    LastLoginTms = DateTime.UtcNow
+                    LastLoginTms = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc)
                 };
 
                 //auto-ban functionality based on Facebook name match.
@@ -556,14 +556,14 @@ namespace ComputerResetApi.Controllers
                 }
 
                 //always update last login.
-                existUserTest.LastLoginTms = DateTime.UtcNow;
+                existUserTest.LastLoginTms = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
                     
                 _context.Users.Update(existUserTest);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
             }
 
-            UserAttrib existUser = new UserAttrib() {
+            var existUser = new UserAttrib() {
                 CityNm = existUserTest.CityNm,
                 StateCd = existUserTest.StateCd,
                 CountryCd = existUserTest.CountryCd,

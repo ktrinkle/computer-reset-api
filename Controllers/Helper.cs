@@ -65,7 +65,7 @@ namespace ComputerResetApi.Controllers
         [HttpGet("api/ref/dumpster")]
         public IActionResult GetDumpsterCount() {
             AppSettings appSettings = _appSettings.Value;
-            Dumpsters dumpsterReturn = new Dumpsters() {
+            var dumpsterReturn = new Dumpsters() {
                 DumpsterCount = appSettings.DumpsterCount ?? 0,
                 DumpsterVolume = appSettings.DumpsterVolume ?? 0
             };
@@ -78,7 +78,7 @@ namespace ComputerResetApi.Controllers
 
         public async Task<ActionResult<string>> GetSpiel()
         {
-            //gets lookup of users for typeahead
+            // gets lookup of users for typeahead
             if (!CheckAdmin()) {
                 return Unauthorized("You are not permitted to use this function.");
             } 

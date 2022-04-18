@@ -60,7 +60,7 @@ namespace ComputerResetApi.Controllers
             join u in _context.Users
             on e.UserId equals u.Id
             where e.TimeslotId == timeslotId 
-            && e.AttendNbr == null
+            // && e.AttendNbr == null - removed with self service now
             && u.FbId == facebookId
             && !e.DeleteInd
             select e).SingleOrDefault();
