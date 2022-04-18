@@ -11,5 +11,6 @@ namespace ComputerResetApi.Helpers
         public string DevUserId { get; set; }
         public int? DumpsterCount { get; set; }
         public int? DumpsterVolume { get; set; }
+        public int? AutoClearMinEvent { get; set; }
     }
 }

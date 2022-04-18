@@ -176,6 +176,7 @@ namespace ComputerResetApi.Controllers
 
             //Get auto-clear flag
             var autoclearSetting = _appSettings.Value;
+            var autoClearMin = autoclearSetting.AutoClearMinEvent ?? 0;
             int autoClearLimit = autoclearSetting.AutoClear ?? 0;
             bool autoClearInd = autoClearLimit > 0;
 
@@ -198,7 +199,7 @@ namespace ComputerResetApi.Controllers
                 return Content("I am sorry, you are not allowed to sign up for this event.");
             } else {
                 ourUserId = existUser.Id;
-                if (existUser.EventCnt < autoClearLimit && existUser.EventCnt > 0) {
+                if (existUser.EventCnt < autoClearLimit && existUser.EventCnt > autoClearMin) {
                     autoClearInd = true;
                 }
             }
@@ -239,8 +240,10 @@ namespace ComputerResetApi.Controllers
 
             // auto-clear functionality.
             // Only run if user has no no-shows and is below limit.
+            _logger.LogInformation($"Autoclear logic - Autoclear ind {autoClearInd} {existUser.EventCnt} {autoClearLimit}");
             if (autoClearInd && existUser.NoShowCnt is null && existUser.EventCnt < autoClearLimit) {
                 newEventId = GetSlotNumber(signup.EventId);
+                _logger.LogInformation($"slot # {newEventId}");
             } else {
                 newEventId = null;
             }
